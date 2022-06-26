@@ -21,8 +21,6 @@ import {
   isBangUniaryExp,
   isBooleanDatatype,
   isBooleanLiteralExp,
-  isCharDatatype,
-  isCharLiteralExp,
   isFunctionCallExp,
   isFunctionDatatype,
   isIdentifierLiteralExp,
@@ -171,12 +169,6 @@ export class CodeGen {
       );
     }
 
-    const whileLoopCondCheckerBB = BasicBlock.Create(
-      this.llvmContext,
-      scope.getCurrentFn().getBasicBlockTempName(),
-      scope.getCurrentFn().getLLVMFunction()
-    );
-
     const whileLoopDecBB = BasicBlock.Create(
       this.llvmContext,
       scope.getCurrentFn().getBasicBlockTempName(),
@@ -189,17 +181,7 @@ export class CodeGen {
       scope.getCurrentFn().getLLVMFunction()
     );
 
-    this.llvmIrBuilder.CreateBr(whileLoopCondCheckerBB);
-
-    this.llvmIrBuilder.SetInsertPoint(whileLoopCondCheckerBB);
-
-    const whileLoopCondExp = this.getExpValue(scope, curAst.condition);
-
-    this.llvmIrBuilder.CreateCondBr(
-      whileLoopCondExp,
-      whileLoopDecBB,
-      outsideBlockBB
-    );
+    this.llvmIrBuilder.CreateBr(whileLoopDecBB);
 
     this.llvmIrBuilder.SetInsertPoint(whileLoopDecBB);
 
@@ -207,7 +189,7 @@ export class CodeGen {
 
     const newScope = new Scope({
       breakBB: outsideBlockBB,
-      continueBB: whileLoopCondCheckerBB,
+      continueBB: whileLoopDecBB,
       fn: scope.getCurrentFn(),
     });
 
@@ -215,7 +197,7 @@ export class CodeGen {
       this.consumeAst(newScope, insideWhileLoopAst);
     }
     if (!newScope.isScopeTerminated()) {
-      this.llvmIrBuilder.CreateBr(whileLoopCondCheckerBB);
+      this.llvmIrBuilder.CreateBr(whileLoopDecBB);
     }
 
     scope.getCurrentFn().finishedParsingChildContext();
