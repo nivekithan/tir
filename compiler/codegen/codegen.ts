@@ -13,7 +13,7 @@ import llvm, {
 } from "llvm-bindings";
 import { KeywordTokens, Token } from "../lexer/tokens";
 import { TLLVMFunction } from "./function";
-import { ReAssignmentPath } from "../types/base";
+import { FunctionDeclaration, ReAssignmentPath } from "../types/base";
 import { getDatatypeOfTirExpression } from "../types/tir";
 import {
   isArrayDatatype,
@@ -37,6 +37,7 @@ import {
   isVoidDatatype,
 } from "../types/all";
 import { TirAst, TirExpression, TirDataType } from "../types/tir";
+import { Scope } from "./scope";
 
 export const convertToLLVMModule = (asts: TirAst[]): string => {
   const ModuleCodeGen = new CodeGen(asts, "main");
@@ -54,11 +55,6 @@ export class CodeGen {
   llvmModule: Module;
   llvmIrBuilder: IRBuilder;
 
-  currentFn: TLLVMFunction | null;
-
-  breakBB: BasicBlock | null; // On loop what block to go on break statement
-  continueBB: BasicBlock | null; // on loop what block to go on continue statement
-
   globalVarDatabases: { [varName: string]: LLVMFunction | undefined };
 
   constructor(typeCheckedAst: TirAst[], moduleName: string) {
@@ -71,11 +67,7 @@ export class CodeGen {
     this.llvmModule = new Module(moduleName, this.llvmContext);
     this.llvmIrBuilder = new IRBuilder(this.llvmContext);
 
-    this.breakBB = null;
-    this.continueBB = null;
-
     this.globalVarDatabases = {};
-    this.currentFn = null;
 
     // const voidType = this.llvmIrBuilder.getVoidTy();
     // const mainFnType = FunctionType.get(voidType, [], false);
@@ -86,7 +78,7 @@ export class CodeGen {
     //   this.llvmModule
     // );
     // const TMainFn = new TLLVMFunction(mainFn);
-    // this.getCurrentFn() = TMainFn;
+    // scope.getCurrentFn() = TMainFn;
     // const entryBasicBlock = BasicBlock.Create(
     //   this.llvmContext,
     //   "entry",
@@ -97,31 +89,38 @@ export class CodeGen {
 
   consume() {
     while (this.getCurAst() !== null) {
-      this.consumeAst(this.getCurAst());
+      const curAst = this.getCurAst()!;
+
+      if (curAst.type !== "FunctionDeclaration") {
+        throw new Error(`At top level only function declaration are supported`);
+      }
+
+      this.consumeFunctionDeclaration(curAst);
+
       this.next();
     }
   }
 
-  consumeAst(curAst: TirAst | null) {
+  consumeAst(scope: Scope, curAst: TirAst | null) {
     if (curAst === null) throw Error("Does not expect curAst to be null");
     if (curAst.type === "constVariableDeclaration") {
-      this.consumeVariableDeclaration(curAst);
+      this.consumeVariableDeclaration(scope, curAst);
     } else if (curAst.type === "letVariableDeclaration") {
-      this.consumeVariableDeclaration(curAst);
+      this.consumeVariableDeclaration(scope, curAst);
     } else if (curAst.type === "FunctionDeclaration") {
       this.consumeFunctionDeclaration(curAst);
     } else if (curAst.type === "ReturnExpression") {
-      this.consumeReturnExp(curAst);
+      this.consumeReturnExp(scope, curAst);
     } else if (curAst.type === "ReAssignment") {
-      this.consumeReassignment(curAst);
+      this.consumeReassignment(scope, curAst);
     } else if (curAst.type === "typeCheckedIfBlockDeclaration") {
-      this.consumeTypeCheckedIfBlockDeclaration(curAst);
+      this.consumeTypeCheckedIfBlockDeclaration(scope, curAst);
     } else if (curAst.type === "WhileLoopDeclaration") {
-      this.consumeWhileLoopDeclaration(curAst);
+      this.consumeWhileLoopDeclaration(scope, curAst);
     } else if (curAst.type === KeywordTokens.Continue) {
-      this.consumeContinueStatement(curAst);
+      this.consumeContinueStatement(scope, curAst);
     } else if (curAst.type === KeywordTokens.Break) {
-      this.consumeBreakStatement(curAst);
+      this.consumeBreakStatement(scope, curAst);
     } else {
       throw Error(`It is still not supported for compiling ast ${curAst.type}`);
     }
@@ -129,41 +128,41 @@ export class CodeGen {
   /**
    * Expected curAst to be of type KeywordTokens.Continue
    */
-  consumeContinueStatement(curAst: TirAst | null) {
+  consumeContinueStatement(scope: Scope, curAst: TirAst | null) {
     if (curAst === null || curAst.type !== KeywordTokens.Continue) {
       throw new Error(
         `Expected curAst to be of type KeywordTokens.Continue but instead got ${curAst?.type}`
       );
     }
 
-    if (this.continueBB === null) {
-      throw Error(`Expected this.continueBB to be not null`);
+    if (scope.continueBB === null) {
+      throw Error(`Expected scope.continueBB to be not null`);
     }
 
-    this.llvmIrBuilder.CreateBr(this.continueBB);
+    this.llvmIrBuilder.CreateBr(scope.continueBB);
   }
   /**
    * Expected curAst to be of type KeywordTokens.Break
    */
-  consumeBreakStatement(curAst: TirAst | null) {
+  consumeBreakStatement(scope: Scope, curAst: TirAst | null) {
     if (curAst === null || curAst.type !== KeywordTokens.Break) {
       throw new Error(
         `Expected curAst to be of type KeywordTokens.Break but instead got ${curAst?.type}`
       );
     }
 
-    if (this.breakBB === null) {
-      throw Error(`Expected this.breakBB to be not null`);
+    if (scope.breakBB === null) {
+      throw Error(`Expected scope.breakBB to be not null`);
     }
 
-    this.llvmIrBuilder.CreateBr(this.breakBB);
+    this.llvmIrBuilder.CreateBr(scope.breakBB);
   }
 
   /**
    * Expects the curAst to be of WhileLoopDeclaration
    */
 
-  consumeWhileLoopDeclaration(curAst: TirAst | null) {
+  consumeWhileLoopDeclaration(scope: Scope, curAst: TirAst | null) {
     if (curAst === null || curAst.type !== "WhileLoopDeclaration") {
       throw new Error(
         `Expected curAst to of type WhileLoopDeclaration but instead got ${curAst?.type}`
@@ -172,27 +171,27 @@ export class CodeGen {
 
     const whileLoopCondCheckerBB = BasicBlock.Create(
       this.llvmContext,
-      this.getCurrentFn().getBasicBlockTempName(),
-      this.getCurrentFn().getLLVMFunction()
+      scope.getCurrentFn().getBasicBlockTempName(),
+      scope.getCurrentFn().getLLVMFunction()
     );
 
     const whileLoopDecBB = BasicBlock.Create(
       this.llvmContext,
-      this.getCurrentFn().getBasicBlockTempName(),
-      this.getCurrentFn().getLLVMFunction()
+      scope.getCurrentFn().getBasicBlockTempName(),
+      scope.getCurrentFn().getLLVMFunction()
     );
 
     const outsideBlockBB = BasicBlock.Create(
       this.llvmContext,
-      this.getCurrentFn().getBasicBlockTempName(),
-      this.getCurrentFn().getLLVMFunction()
+      scope.getCurrentFn().getBasicBlockTempName(),
+      scope.getCurrentFn().getLLVMFunction()
     );
 
     this.llvmIrBuilder.CreateBr(whileLoopCondCheckerBB);
 
     this.llvmIrBuilder.SetInsertPoint(whileLoopCondCheckerBB);
 
-    const whileLoopCondExp = this.getExpValue(curAst.condition);
+    const whileLoopCondExp = this.getExpValue(scope, curAst.condition);
 
     this.llvmIrBuilder.CreateCondBr(
       whileLoopCondExp,
@@ -202,21 +201,21 @@ export class CodeGen {
 
     this.llvmIrBuilder.SetInsertPoint(whileLoopDecBB);
 
-    this.getCurrentFn().parsingChildContext();
+    scope.getCurrentFn().parsingChildContext();
 
-    this.continueBB = whileLoopCondCheckerBB;
-    this.breakBB = outsideBlockBB;
+    const newScope = new Scope({
+      breakBB: outsideBlockBB,
+      continueBB: whileLoopCondCheckerBB,
+      fn: scope.getCurrentFn(),
+    });
 
     for (const insideWhileLoopAst of curAst.blocks) {
-      this.consumeAst(insideWhileLoopAst);
+      this.consumeAst(newScope, insideWhileLoopAst);
     }
 
     this.llvmIrBuilder.CreateBr(whileLoopCondCheckerBB);
 
-    this.continueBB = null;
-    this.breakBB = null;
-
-    this.getCurrentFn().finishedParsingChildContext();
+    scope.getCurrentFn().finishedParsingChildContext();
 
     this.llvmIrBuilder.SetInsertPoint(outsideBlockBB);
   }
@@ -225,32 +224,32 @@ export class CodeGen {
    * Expects the curAst to be of TypeCheckedIfBlockDeclaration
    */
 
-  consumeTypeCheckedIfBlockDeclaration(curAst: TirAst | null) {
+  consumeTypeCheckedIfBlockDeclaration(scope: Scope, curAst: TirAst | null) {
     if (curAst === null || curAst.type !== "typeCheckedIfBlockDeclaration") {
       throw Error(
         `Expected curAst to be of type typeCheckedIfBlockDeclaration but instead got ${curAst?.type}`
       );
     }
 
-    const ifBlockCondExp = this.getExpValue(curAst.ifBlock.condition);
+    const ifBlockCondExp = this.getExpValue(scope, curAst.ifBlock.condition);
 
     const ifBlockBB = BasicBlock.Create(
       this.llvmContext,
-      this.getCurrentFn().getBasicBlockTempName(),
-      this.getCurrentFn().getLLVMFunction()
+      scope.getCurrentFn().getBasicBlockTempName(),
+      scope.getCurrentFn().getLLVMFunction()
     );
 
     const elseIfBlocksBBs = curAst.elseIfBlocks.map((value) => {
       const elseIfBlockCondChecker = BasicBlock.Create(
         this.llvmContext,
-        this.getCurrentFn().getBasicBlockTempName(),
-        this.getCurrentFn().getLLVMFunction()
+        scope.getCurrentFn().getBasicBlockTempName(),
+        scope.getCurrentFn().getLLVMFunction()
       );
 
       const elseIfBlockDeclaration = BasicBlock.Create(
         this.llvmContext,
-        this.getCurrentFn().getBasicBlockTempName(),
-        this.getCurrentFn().getLLVMFunction()
+        scope.getCurrentFn().getBasicBlockTempName(),
+        scope.getCurrentFn().getLLVMFunction()
       );
 
       return {
@@ -262,15 +261,15 @@ export class CodeGen {
     const elseBlockBB = curAst.elseBlock
       ? BasicBlock.Create(
           this.llvmContext,
-          this.getCurrentFn().getBasicBlockTempName(),
-          this.getCurrentFn().getLLVMFunction()
+          scope.getCurrentFn().getBasicBlockTempName(),
+          scope.getCurrentFn().getLLVMFunction()
         )
       : undefined;
 
     const outsideBlock = BasicBlock.Create(
       this.llvmContext,
-      this.getCurrentFn().getBasicBlockTempName(),
-      this.getCurrentFn().getLLVMFunction()
+      scope.getCurrentFn().getBasicBlockTempName(),
+      scope.getCurrentFn().getLLVMFunction()
     );
 
     const BBToGoAferIfBlockFailed = () => {
@@ -296,19 +295,27 @@ export class CodeGen {
 
     this.llvmIrBuilder.SetInsertPoint(ifBlockBB);
 
-    this.getCurrentFn().parsingChildContext();
+    scope.getCurrentFn().parsingChildContext();
+
+    const ifBlockScope = new Scope({
+      ...scope,
+    });
+
     for (const ifBlockAst of curAst.ifBlock.blocks) {
-      this.consumeAst(ifBlockAst);
+      this.consumeAst(ifBlockScope, ifBlockAst);
     }
     this.llvmIrBuilder.CreateBr(outsideBlock);
-    this.getCurrentFn().finishedParsingChildContext();
+    scope.getCurrentFn().finishedParsingChildContext();
 
     elseIfBlocksBBs.forEach(({ condCheckerBB, decBB }, i) => {
       const elseIfBlockAst = curAst.elseIfBlocks[i];
 
       this.llvmIrBuilder.SetInsertPoint(condCheckerBB);
 
-      const elseIfBlockCondition = this.getExpValue(elseIfBlockAst.condition);
+      const elseIfBlockCondition = this.getExpValue(
+        scope,
+        elseIfBlockAst.condition
+      );
 
       const nextBBToGoIfCondFailed = () => {
         const isThereAnotherElseIfBlock = elseIfBlocksBBs[i + 1] !== undefined;
@@ -333,28 +340,36 @@ export class CodeGen {
 
       this.llvmIrBuilder.SetInsertPoint(decBB);
 
-      this.getCurrentFn().parsingChildContext();
+      scope.getCurrentFn().parsingChildContext();
+
+      const elseIfBlockScope = new Scope({
+        ...scope,
+      });
 
       for (const astInsideElseIfBlock of elseIfBlockAst.blocks) {
-        this.consumeAst(astInsideElseIfBlock);
+        this.consumeAst(elseIfBlockScope, astInsideElseIfBlock);
       }
 
       this.llvmIrBuilder.CreateBr(outsideBlock);
 
-      this.getCurrentFn().finishedParsingChildContext();
+      scope.getCurrentFn().finishedParsingChildContext();
     });
 
     if (elseBlockBB) {
       this.llvmIrBuilder.SetInsertPoint(elseBlockBB);
 
-      this.getCurrentFn().parsingChildContext();
+      scope.getCurrentFn().parsingChildContext();
+
+      const elseBlockScope = new Scope({
+       ...scope
+      });
 
       for (const elseBlockAst of curAst.elseBlock!.blocks) {
-        this.consumeAst(elseBlockAst);
+        this.consumeAst(elseBlockScope, elseBlockAst);
       }
 
       this.llvmIrBuilder.CreateBr(outsideBlock);
-      this.getCurrentFn().finishedParsingChildContext();
+      scope.getCurrentFn().finishedParsingChildContext();
     }
 
     this.llvmIrBuilder.SetInsertPoint(outsideBlock);
@@ -367,16 +382,16 @@ export class CodeGen {
    *
    */
 
-  consumeReassignment(curAst: TirAst | null) {
+  consumeReassignment(scope: Scope, curAst: TirAst | null) {
     if (curAst === null || curAst.type !== "ReAssignment")
       throw Error(
         `Expected curAst to be of type ConsumeReaassignment but instead got ${curAst?.type}`
       );
 
     const leftPath = curAst.path;
-    const varPointer = this.getReassignmentPointer(leftPath);
+    const varPointer = this.getReassignmentPointer(scope, leftPath);
 
-    const expValue = this.getExpValue(curAst.exp);
+    const expValue = this.getExpValue(scope, curAst.exp);
 
     if (curAst.assignmentOperator === Token.Assign) {
       this.llvmIrBuilder.CreateStore(expValue, varPointer);
@@ -415,7 +430,7 @@ export class CodeGen {
    * Expects the curAst to be constVariableDeclaration
    */
 
-  consumeVariableDeclaration(curAst: TirAst | null) {
+  consumeVariableDeclaration(scope: Scope, curAst: TirAst | null) {
     if (
       curAst === null ||
       (curAst.type !== "constVariableDeclaration" &&
@@ -425,6 +440,7 @@ export class CodeGen {
 
     const varType = this.getLLVMType(curAst.datatype);
     const resolvedIdentifierName = this.resolveIdentifierName(
+      scope,
       curAst.identifierName
     );
 
@@ -434,21 +450,18 @@ export class CodeGen {
       resolvedIdentifierName
     );
 
-    const value = this.getExpValue(curAst.exp);
+    const value = this.getExpValue(scope, curAst.exp);
 
     this.llvmIrBuilder.CreateStore(value, allocatedVar);
 
-    this.getCurrentFn().insertVarName(resolvedIdentifierName, allocatedVar);
+    scope.getCurrentFn().insertVarName(resolvedIdentifierName, allocatedVar);
   }
 
   /**
    * Expects the curAst to be functionDeclaration
    */
 
-  consumeFunctionDeclaration(curAst: TirAst | null) {
-    if (curAst === null || curAst.type !== "FunctionDeclaration")
-      throw Error(`Expected curAst to be of type functionDeclaration`);
-
+  consumeFunctionDeclaration(curAst: FunctionDeclaration<TirAst, TirDataType>) {
     const returnLLVMType = this.getLLVMType(curAst.returnType);
     const fnArguments = curAst.arguments.map(([argName, argType]) => {
       return this.getLLVMType(argType);
@@ -465,8 +478,6 @@ export class CodeGen {
     this.addGlobalVar(curAst.name, fnValue);
 
     const TFnValue = new TLLVMFunction(fnValue);
-    const previousTFnValue = this.currentFn;
-    this.currentFn = TFnValue;
 
     const entryBB = BasicBlock.Create(this.llvmContext, "entry", fnValue);
     const previousInsertBlock = this.llvmIrBuilder.GetInsertBlock();
@@ -483,11 +494,15 @@ export class CodeGen {
       TFnValue.insertVarName(argName, allocaArg);
     });
 
+    const scopeForFnDeclaration = new Scope({
+      breakBB: null,
+      continueBB: null,
+      fn: TFnValue,
+    });
     curAst.blocks.forEach((ast) => {
-      this.consumeAst(ast);
+      this.consumeAst(scopeForFnDeclaration, ast);
     });
 
-    this.currentFn = previousTFnValue;
     if (previousInsertBlock !== null) {
       this.llvmIrBuilder.SetInsertPoint(previousInsertBlock);
     }
@@ -495,7 +510,7 @@ export class CodeGen {
   /**
    * Expects the curAst to be of ReturnExpression
    */
-  consumeReturnExp(curAst: TirAst | null) {
+  consumeReturnExp(scope: Scope, curAst: TirAst | null) {
     if (curAst === null || curAst.type !== "ReturnExpression")
       throw new Error("Expected curAst to be of type ReturnExpression");
 
@@ -504,22 +519,26 @@ export class CodeGen {
     if (returnExp === null) {
       this.llvmIrBuilder.CreateRetVoid();
     } else {
-      this.llvmIrBuilder.CreateRet(this.getExpValue(returnExp));
+      this.llvmIrBuilder.CreateRet(this.getExpValue(scope, returnExp));
     }
   }
 
   getReassignmentPointer(
+    scope: Scope,
     assignmentPath: ReAssignmentPath<TirExpression, TirDataType>
   ): Value {
     if (assignmentPath.type === "IdentifierPath") {
-      const varInfo = this.getCurrentFn().getVarInfo(assignmentPath.name);
+      const varInfo = scope.getCurrentFn().getVarInfo(assignmentPath.name);
 
       if (varInfo === null)
         throw Error(`There is no variable with name ${assignmentPath.name}`);
 
       return varInfo;
     } else if (assignmentPath.type === "DotMemberPath") {
-      const leftInfo = this.getReassignmentPointer(assignmentPath.leftPath);
+      const leftInfo = this.getReassignmentPointer(
+        scope,
+        assignmentPath.leftPath
+      );
       const leftDatatype = assignmentPath.leftDataType;
 
       if (!isObjectDatatype(leftDatatype))
@@ -544,9 +563,12 @@ export class CodeGen {
 
       return ObjectElementPointer;
     } else if (assignmentPath.type === "BoxMemberPath") {
-      const leftPointer = this.getReassignmentPointer(assignmentPath.leftPath);
+      const leftPointer = this.getReassignmentPointer(
+        scope,
+        assignmentPath.leftPath
+      );
 
-      const floatIndexValue = this.getExpValue(assignmentPath.accessExp);
+      const floatIndexValue = this.getExpValue(scope, assignmentPath.accessExp);
       const convertedToInt = this.llvmIrBuilder.CreateFPToSI(
         floatIndexValue,
         this.llvmIrBuilder.getInt32Ty()
@@ -569,13 +591,13 @@ export class CodeGen {
     throw Error("Not yet Implemented");
   }
 
-  getExpValue(exp: TirExpression): Value {
+  getExpValue(scope: Scope, exp: TirExpression): Value {
     if (isNumberLiteralExp(exp)) {
       return ConstantFP.get(this.llvmIrBuilder.getDoubleTy(), exp.value);
     } else if (isBooleanLiteralExp(exp)) {
       return this.llvmIrBuilder.getInt1(exp.value);
     } else if (isIdentifierLiteralExp(exp)) {
-      const allocatedVarName = this.getCurrentFn().getVarInfo(exp.name);
+      const allocatedVarName = scope.getCurrentFn().getVarInfo(exp.name);
 
       if (allocatedVarName === null) {
         const value = this.getGlobalVar(exp.name);
@@ -590,10 +612,10 @@ export class CodeGen {
 
       return this.llvmIrBuilder.CreateLoad(llvmType, allocatedVarName);
     } else if (isFunctionCallExp(exp)) {
-      const leftValue = this.getExpValue(exp.left);
+      const leftValue = this.getExpValue(scope, exp.left);
 
       const fnArgs = exp.arguments.map((exp) => {
-        return this.getExpValue(exp);
+        return this.getExpValue(scope, exp);
       });
       return this.llvmIrBuilder.CreateCall(leftValue as LLVMFunction, fnArgs);
     } else if (isStringLiteralExp(exp)) {
@@ -644,7 +666,7 @@ export class CodeGen {
         );
 
         this.llvmIrBuilder.CreateStore(
-          this.getExpValue(exp),
+          this.getExpValue(scope, exp),
           insideElementPointer
         );
       });
@@ -680,50 +702,50 @@ export class CodeGen {
         );
 
         this.llvmIrBuilder.CreateStore(
-          this.getExpValue(exp),
+          this.getExpValue(scope, exp),
           insideElementPointer
         );
       });
 
       return allocatedValue;
     } else if (isBangUniaryExp(exp)) {
-      const argValue = this.getExpValue(exp.argument);
+      const argValue = this.getExpValue(scope, exp.argument);
       return this.llvmIrBuilder.CreateXor(
         argValue,
         this.llvmIrBuilder.getInt1(true)
       );
     } else if (exp.type === Token.Plus) {
       if (isPlusUninaryExp(exp)) {
-        return this.getExpValue(exp.argument);
+        return this.getExpValue(scope, exp.argument);
       } else {
-        const leftValue = this.getExpValue(exp.left);
-        const rightValue = this.getExpValue(exp.right);
+        const leftValue = this.getExpValue(scope, exp.left);
+        const rightValue = this.getExpValue(scope, exp.right);
 
         return this.llvmIrBuilder.CreateFAdd(leftValue, rightValue);
       }
     } else if (exp.type === Token.Minus) {
       if (isMinusUninaryExp(exp)) {
-        const argValue = this.getExpValue(exp.argument);
+        const argValue = this.getExpValue(scope, exp.argument);
         return this.llvmIrBuilder.CreateFNeg(argValue);
       } else {
-        const leftvalue = this.getExpValue(exp.left);
-        const rightValue = this.getExpValue(exp.right);
+        const leftvalue = this.getExpValue(scope, exp.left);
+        const rightValue = this.getExpValue(scope, exp.right);
 
         return this.llvmIrBuilder.CreateFSub(leftvalue, rightValue);
       }
     } else if (exp.type === Token.Star) {
-      const leftValue = this.getExpValue(exp.left);
-      const rightValue = this.getExpValue(exp.right);
+      const leftValue = this.getExpValue(scope, exp.left);
+      const rightValue = this.getExpValue(scope, exp.right);
 
       return this.llvmIrBuilder.CreateFMul(leftValue, rightValue);
     } else if (exp.type === Token.Slash) {
-      const leftValue = this.getExpValue(exp.left);
-      const rightValue = this.getExpValue(exp.right);
+      const leftValue = this.getExpValue(scope, exp.left);
+      const rightValue = this.getExpValue(scope, exp.right);
 
       return this.llvmIrBuilder.CreateFDiv(leftValue, rightValue);
     } else if (exp.type === Token.StrictEquality) {
-      const leftValue = this.getExpValue(exp.left);
-      const rightValue = this.getExpValue(exp.right);
+      const leftValue = this.getExpValue(scope, exp.left);
+      const rightValue = this.getExpValue(scope, exp.right);
 
       const comparingDatatype = getDatatypeOfTirExpression(exp.left);
 
@@ -739,8 +761,8 @@ export class CodeGen {
         return this.llvmIrBuilder.CreateICmpEQ(leftValue, rightValue);
       }
     } else if (exp.type === Token.StrictNotEqual) {
-      const leftValue = this.getExpValue(exp.left);
-      const rightValue = this.getExpValue(exp.right);
+      const leftValue = this.getExpValue(scope, exp.left);
+      const rightValue = this.getExpValue(scope, exp.right);
 
       const comparingDatatype = getDatatypeOfTirExpression(exp.left);
 
@@ -756,28 +778,28 @@ export class CodeGen {
         return this.llvmIrBuilder.CreateICmpNE(leftValue, rightValue);
       }
     } else if (exp.type === Token.GreaterThan) {
-      const leftValue = this.getExpValue(exp.left);
-      const rightValue = this.getExpValue(exp.right);
+      const leftValue = this.getExpValue(scope, exp.left);
+      const rightValue = this.getExpValue(scope, exp.right);
 
       return this.llvmIrBuilder.CreateFCmpOGT(leftValue, rightValue);
     } else if (exp.type === Token.GreaterThanOrEqual) {
-      const leftValue = this.getExpValue(exp.left);
-      const rightValue = this.getExpValue(exp.right);
+      const leftValue = this.getExpValue(scope, exp.left);
+      const rightValue = this.getExpValue(scope, exp.right);
 
       return this.llvmIrBuilder.CreateFCmpOGE(leftValue, rightValue);
     } else if (exp.type === Token.LessThan) {
-      const leftValue = this.getExpValue(exp.left);
-      const rightValue = this.getExpValue(exp.right);
+      const leftValue = this.getExpValue(scope, exp.left);
+      const rightValue = this.getExpValue(scope, exp.right);
 
       return this.llvmIrBuilder.CreateFCmpOLT(leftValue, rightValue);
     } else if (exp.type === Token.LessThanOrEqual) {
-      const leftValue = this.getExpValue(exp.left);
-      const rightValue = this.getExpValue(exp.right);
+      const leftValue = this.getExpValue(scope, exp.left);
+      const rightValue = this.getExpValue(scope, exp.right);
 
       return this.llvmIrBuilder.CreateFCmpOLE(leftValue, rightValue);
     } else if (exp.type === "BoxMemberAccess") {
-      const leftValue = this.getExpValue(exp.left);
-      const rightValue = this.getExpValue(exp.right);
+      const leftValue = this.getExpValue(scope, exp.left);
+      const rightValue = this.getExpValue(scope, exp.right);
 
       const convertedToIntValue = this.llvmIrBuilder.CreateFPToSI(
         rightValue,
@@ -795,7 +817,7 @@ export class CodeGen {
         pointerToElement
       );
     } else if (exp.type === "DotMemberAccess") {
-      const leftValue = this.getExpValue(exp.left);
+      const leftValue = this.getExpValue(scope, exp.left);
 
       const leftDatatype = getDatatypeOfTirExpression(exp.left);
 
@@ -905,8 +927,8 @@ export class CodeGen {
   }
 
   // Adds the function context with the identifierName
-  resolveIdentifierName(varName: string) {
-    const resolvedName = `${varName}${this.getCurrentFn().context}`;
+  resolveIdentifierName(scope: Scope, varName: string) {
+    const resolvedName = `${varName}${scope.getCurrentFn().context}`;
     return resolvedName;
   }
 
@@ -921,18 +943,6 @@ export class CodeGen {
     } else {
       this.curPos++;
     }
-  }
-
-  getCurrentFn() {
-    const currentFn = this.currentFn;
-
-    if (currentFn === null) {
-      throw new Error(
-        `this.currentFn is not yet set. Call getCurrentFn() only after this.currentFn is set`
-      );
-    }
-
-    return currentFn;
   }
 
   getCurAst(): TirAst | null {

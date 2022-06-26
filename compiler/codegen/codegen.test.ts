@@ -749,7 +749,7 @@ test("Reassigning string variable", () => {
     a = "456";
     return;
   }`;
-    
+
   const output = convertToLLVMModule(
     typeCheckAst(convertToAst(convertToTokens(input)))
   );
