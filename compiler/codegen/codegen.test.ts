@@ -1,4 +1,3 @@
-import exp from "constants";
 import { convertToTokens } from "../lexer/lexer";
 import { convertToAst } from "../parser/parser";
 import { typeCheckAst } from "../typesChecker/typeChecker";
@@ -688,18 +687,16 @@ BB.2:                                             ; preds = %BB.5, %BB.0
 
 BB.3:                                             ; preds = %BB.1
   br label %BB.0
-  br label %BB.4
 
-BB.4:                                             ; preds = %BB.3, %BB.1
+BB.4:                                             ; preds = %BB.1
   %2 = load double, double* %a, align 8
   %3 = fcmp oeq double %2, 6.000000e+00
   br i1 %3, label %BB.5, label %BB.6
 
 BB.5:                                             ; preds = %BB.4
   br label %BB.2
-  br label %BB.6
 
-BB.6:                                             ; preds = %BB.5, %BB.4
+BB.6:                                             ; preds = %BB.4
   %4 = load double, double* %a, align 8
   %5 = fsub double %4, 1.000000e+00
   store double %5, double* %a, align 8

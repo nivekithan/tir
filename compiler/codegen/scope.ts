@@ -13,6 +13,8 @@ export class Scope {
   breakBB: BasicBlock | null;
   continueBB: BasicBlock | null;
 
+  #scopeTerminated: boolean = false;
+
   constructor({ breakBB, continueBB, fn }: ScopeArgs) {
     this.fn = fn;
     this.breakBB = breakBB;
@@ -21,5 +23,13 @@ export class Scope {
 
   getCurrentFn() {
     return this.fn;
+  }
+
+  scopeTerminated() {
+    this.#scopeTerminated = true;
+  }
+
+  isScopeTerminated() {
+    return this.#scopeTerminated;
   }
 }

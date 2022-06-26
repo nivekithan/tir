@@ -1,9 +1,10 @@
 {
-    "compilerOptions": {
-      "isolatedModules": true,
-      "lib": ["ESNext"],
-      "strict": true,
-      "esModuleInterop": true
-    }
+  "compilerOptions": {
+    "isolatedModules": true,
+    "lib": ["ESNext"],
+    "strict": true,
+    "esModuleInterop": true,
+    "target": "ESNext",
+    "moduleResolution": "node"
   }
-  
+}

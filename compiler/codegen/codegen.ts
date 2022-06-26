@@ -140,6 +140,7 @@ export class CodeGen {
     }
 
     this.llvmIrBuilder.CreateBr(scope.continueBB);
+    scope.scopeTerminated();
   }
   /**
    * Expected curAst to be of type KeywordTokens.Break
@@ -156,6 +157,7 @@ export class CodeGen {
     }
 
     this.llvmIrBuilder.CreateBr(scope.breakBB);
+    scope.scopeTerminated();
   }
 
   /**
@@ -212,8 +214,9 @@ export class CodeGen {
     for (const insideWhileLoopAst of curAst.blocks) {
       this.consumeAst(newScope, insideWhileLoopAst);
     }
-
-    this.llvmIrBuilder.CreateBr(whileLoopCondCheckerBB);
+    if (!newScope.isScopeTerminated()) {
+      this.llvmIrBuilder.CreateBr(whileLoopCondCheckerBB);
+    }
 
     scope.getCurrentFn().finishedParsingChildContext();
 
@@ -304,7 +307,11 @@ export class CodeGen {
     for (const ifBlockAst of curAst.ifBlock.blocks) {
       this.consumeAst(ifBlockScope, ifBlockAst);
     }
-    this.llvmIrBuilder.CreateBr(outsideBlock);
+
+    if (!ifBlockScope.isScopeTerminated()) {
+      this.llvmIrBuilder.CreateBr(outsideBlock);
+    }
+
     scope.getCurrentFn().finishedParsingChildContext();
 
     elseIfBlocksBBs.forEach(({ condCheckerBB, decBB }, i) => {
@@ -349,8 +356,9 @@ export class CodeGen {
       for (const astInsideElseIfBlock of elseIfBlockAst.blocks) {
         this.consumeAst(elseIfBlockScope, astInsideElseIfBlock);
       }
-
-      this.llvmIrBuilder.CreateBr(outsideBlock);
+      if (!elseIfBlockScope.isScopeTerminated()) {
+        this.llvmIrBuilder.CreateBr(outsideBlock);
+      }
 
       scope.getCurrentFn().finishedParsingChildContext();
     });
@@ -361,14 +369,15 @@ export class CodeGen {
       scope.getCurrentFn().parsingChildContext();
 
       const elseBlockScope = new Scope({
-       ...scope
+        ...scope,
       });
 
       for (const elseBlockAst of curAst.elseBlock!.blocks) {
         this.consumeAst(elseBlockScope, elseBlockAst);
       }
-
-      this.llvmIrBuilder.CreateBr(outsideBlock);
+      if (!elseBlockScope.isScopeTerminated()) {
+        this.llvmIrBuilder.CreateBr(outsideBlock);
+      }
       scope.getCurrentFn().finishedParsingChildContext();
     }
 
@@ -480,7 +489,6 @@ export class CodeGen {
     const TFnValue = new TLLVMFunction(fnValue);
 
     const entryBB = BasicBlock.Create(this.llvmContext, "entry", fnValue);
-    const previousInsertBlock = this.llvmIrBuilder.GetInsertBlock();
 
     this.llvmIrBuilder.SetInsertPoint(entryBB);
 
@@ -499,12 +507,13 @@ export class CodeGen {
       continueBB: null,
       fn: TFnValue,
     });
+
     curAst.blocks.forEach((ast) => {
       this.consumeAst(scopeForFnDeclaration, ast);
     });
 
-    if (previousInsertBlock !== null) {
-      this.llvmIrBuilder.SetInsertPoint(previousInsertBlock);
+    if (!scopeForFnDeclaration.isScopeTerminated()) {
+      this.llvmIrBuilder.CreateRetVoid();
     }
   }
   /**
@@ -521,6 +530,8 @@ export class CodeGen {
     } else {
       this.llvmIrBuilder.CreateRet(this.getExpValue(scope, returnExp));
     }
+
+    scope.scopeTerminated();
   }
 
   getReassignmentPointer(
