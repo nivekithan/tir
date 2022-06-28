@@ -1,5 +1,4 @@
-import clone = require("clone");
-import deepEqual = require("deep-equal");
+import deepEqual from "deep-equal";
 import { KeywordTokens, Token } from "../lexer/tokens";
 import {
   isFunctionDatatype,

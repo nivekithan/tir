@@ -1,4 +1,4 @@
-import clone = require("clone");
+import clone from "clone";
 import { DataType } from "../types/ast";
 
 export type ClosureVariable = {

@@ -1,5 +1,7 @@
+import { resolve } from "path";
 import { convertToTokens } from "../lexer/lexer";
 import { convertToAst } from "../parser/parser";
+import { DepImporter } from "../typesChecker/depImporter";
 import { typeCheckAst } from "../typesChecker/typeChecker";
 import { convertToLLVMModule } from "./codegen";
 
@@ -808,6 +810,51 @@ entry:
   %b = alloca [3 x i8]*, align 8
   %4 = load [3 x i8]*, [3 x i8]** %a, align 8
   store [3 x i8]* %4, [3 x i8]** %b, align 8
+  ret void
+}
+"
+`);
+});
+
+test("Importing a functions from another files", () => {
+  const input = `
+  import {foo} from "./someFile";
+  
+  function main() {
+
+    const a = foo();
+
+    return; 
+  }
+  
+  `;
+
+  const output = convertToLLVMModule(
+    typeCheckAst(
+      convertToAst(convertToTokens(input)),
+      new DepImporter("/curDir", {
+        [resolve("/curDir", "./someFile")]: {
+          foo: {
+            type: "FunctionDataType",
+            arguments: {},
+            returnType: { type: "BooleanDataType" },
+          },
+        },
+      })
+    )
+  );
+
+  expect(output).toMatchInlineSnapshot(`
+"; ModuleID = 'main'
+source_filename = \\"main\\"
+
+declare internal i1 @foo()
+
+define void @main() {
+entry:
+  %a = alloca i1, align 1
+  %0 = call i1 @foo()
+  store i1 %0, i1* %a, align 1
   ret void
 }
 "

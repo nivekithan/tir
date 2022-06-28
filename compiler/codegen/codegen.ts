@@ -13,7 +13,11 @@ import llvm, {
 } from "llvm-bindings";
 import { KeywordTokens, Token } from "../lexer/tokens";
 import { TLLVMFunction } from "./function";
-import { FunctionDeclaration, ReAssignmentPath } from "../types/base";
+import {
+  FunctionDeclaration,
+  ImportDeclaration,
+  ReAssignmentPath,
+} from "../types/base";
 import { getDatatypeOfTirExpression } from "../types/tir";
 import {
   isArrayDatatype,
@@ -89,13 +93,53 @@ export class CodeGen {
     while (this.getCurAst() !== null) {
       const curAst = this.getCurAst()!;
 
-      if (curAst.type !== "FunctionDeclaration") {
-        throw new Error(`At top level only function declaration are supported`);
+      if (curAst.type === "FunctionDeclaration") {
+        this.consumeFunctionDeclaration(curAst);
+      } else if (curAst.type === "importDeclaration") {
+        this.consumeImportDeclaration(curAst);
+      } else {
+        throw new Error(
+          `At top level only function declaration or import declaration are supported`
+        );
       }
 
-      this.consumeFunctionDeclaration(curAst);
-
       this.next();
+    }
+  }
+
+  consumeImportDeclaration(curAst: ImportDeclaration<TirDataType>) {
+    const importedIdentifiers = curAst.importedIdentifires;
+
+    for (const importedIdentifier of importedIdentifiers) {
+      const importingDatatype = importedIdentifier.dataType;
+
+      if (!isFunctionDatatype(importingDatatype)) {
+        throw new Error(`For now its only supported to import functions`);
+      }
+
+      const returnType = this.getLLVMType(importingDatatype.returnType);
+      const args = Object.keys(importingDatatype.arguments).map((value) => {
+        const argType = this.getLLVMType(importingDatatype.arguments[value]!);
+        return argType;
+      });
+
+      const functionLLVMType = FunctionType.get(returnType, args, false);
+
+      console.log({
+        functionLLVMType,
+        linkage: LLVMFunction.LinkageTypes.InternalLinkage,
+        name: importedIdentifier.name,
+        module: this.llvmModule,
+      });
+
+      const functionValue = LLVMFunction.Create(
+        functionLLVMType,
+        LLVMFunction.LinkageTypes.InternalLinkage,
+        importedIdentifier.name,
+        this.llvmModule
+      );
+
+      this.addGlobalVar(importedIdentifier.name, functionValue);
     }
   }
 
