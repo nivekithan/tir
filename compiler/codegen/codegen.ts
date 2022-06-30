@@ -59,13 +59,17 @@ export class CodeGen {
 
   globalVarDatabases: { [varName: string]: LLVMFunction | undefined };
 
-  constructor(typeCheckedAst: TirAst[], moduleName: string) {
+  constructor(
+    typeCheckedAst: TirAst[],
+    moduleName: string,
+    context?: LLVMContext
+  ) {
     this.asts = typeCheckedAst;
     this.curPos = 0;
 
     this.moduleName = moduleName;
 
-    this.llvmContext = new LLVMContext();
+    this.llvmContext = context ?? new LLVMContext();
     this.llvmModule = new Module(moduleName, this.llvmContext);
     this.llvmIrBuilder = new IRBuilder(this.llvmContext);
 
@@ -125,16 +129,9 @@ export class CodeGen {
 
       const functionLLVMType = FunctionType.get(returnType, args, false);
 
-      console.log({
-        functionLLVMType,
-        linkage: LLVMFunction.LinkageTypes.InternalLinkage,
-        name: importedIdentifier.name,
-        module: this.llvmModule,
-      });
-
       const functionValue = LLVMFunction.Create(
         functionLLVMType,
-        LLVMFunction.LinkageTypes.InternalLinkage,
+        LLVMFunction.LinkageTypes.ExternalLinkage,
         importedIdentifier.name,
         this.llvmModule
       );

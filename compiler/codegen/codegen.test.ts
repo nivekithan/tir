@@ -832,8 +832,8 @@ test("Importing a functions from another files", () => {
   const output = convertToLLVMModule(
     typeCheckAst(
       convertToAst(convertToTokens(input)),
-      new DepImporter("/curDir", {
-        [resolve("/curDir", "./someFile")]: {
+      new DepImporter("/curDir/s.ts", {
+        [resolve("/curDir/s.ts", "..", "./someFile.ts")]: {
           foo: {
             type: "FunctionDataType",
             arguments: {},
@@ -845,17 +845,39 @@ test("Importing a functions from another files", () => {
   );
 
   expect(output).toMatchInlineSnapshot(`
+    "; ModuleID = 'main'
+    source_filename = \\"main\\"
+
+    declare i1 @foo()
+
+    define void @main() {
+    entry:
+      %a = alloca i1, align 1
+      %0 = call i1 @foo()
+      store i1 %0, i1* %a, align 1
+      ret void
+    }
+    "
+  `);
+});
+
+test("Function which returns a number", () => {
+  const input = `
+  function main() {
+    return 1
+  }`;
+
+  const output = convertToLLVMModule(
+    typeCheckAst(convertToAst(convertToTokens(input)))
+  );
+
+  expect(output).toMatchInlineSnapshot(`
 "; ModuleID = 'main'
 source_filename = \\"main\\"
 
-declare internal i1 @foo()
-
-define void @main() {
+define double @main() {
 entry:
-  %a = alloca i1, align 1
-  %0 = call i1 @foo()
-  store i1 %0, i1* %a, align 1
-  ret void
+  ret double 1.000000e+00
 }
 "
 `);

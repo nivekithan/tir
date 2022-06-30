@@ -1421,8 +1421,8 @@ test("Typechecking import declaration", () => {
   const input = `
   import {a, b} from "./someFile"`;
 
-  const TestImporter = new DepImporter("/curDir", {
-    [resolve("/curDir", "./someFile")]: {
+  const TestImporter = new DepImporter("/curDir/s.ts", {
+    [resolve("/curDir/s.ts", "..", "./someFile.ts")]: {
       a: { type: "NumberDatatype" },
       b: { type: "NumberDatatype" },
     },

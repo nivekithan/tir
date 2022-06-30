@@ -3,6 +3,7 @@ import { KeywordTokens, Token } from "../lexer/tokens";
 import { Ast } from "../types/ast";
 import { convertToAst } from "./parser";
 
+
 test("Test import declaration", () => {
   const input = `
     import { table, Chair } from  "./someFile"

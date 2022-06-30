@@ -46,7 +46,7 @@ export type TypeCheckerOptions = {
   isClosureCreatedForLoop: boolean;
 };
 
-class TypeCheckerFactory {
+export class TypeCheckerFactory {
   asts: Ast[];
   curPos: number | null;
 
