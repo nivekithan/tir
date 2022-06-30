@@ -111,17 +111,16 @@ const compiledBitCodePath = () => {
 
 const internalBitCodePath = () => {
   const path = resolve(
-    "/",
-    "home",
-    "nivekithan",
-    "llvm-internal",
+    process.cwd(),
+    "compiler",
+    "internalFiles",
     "internal.ll"
   );
   return path;
 };
 
 const finalBitCodePath = () => {
-  const path = resolve(process.cwd(), "build", "out.bc");
+  const path = resolve(process.cwd(), "build", "out.ll");
   return path;
 };
 
@@ -147,9 +146,8 @@ const linkWithInternalFile = (
   compiledFile: string,
   generatedFilePath: string
 ) => {
-  execSync(
-    `${getLLVMLinkPath()} ${compiledFile} ${internalBitCodePath()} -o ${generatedFilePath}`
-  );
+  const cmd = `${getLLVMLinkPath()} ${compiledFile} ${internalBitCodePath()} -o ${generatedFilePath} -S`;
+  execSync(cmd);
 };
 
 const convertBitCodeToAsm = (bitCodePath: string, generatedAsmPath: string) => {
@@ -157,9 +155,6 @@ const convertBitCodeToAsm = (bitCodePath: string, generatedAsmPath: string) => {
 };
 
 const convertAsmToExe = (asmPath: string, generatedExePath: string) => {
-  
-    console.log(asmPath, generatedExePath);
-  
   execSync(`gcc ${asmPath} -o ${generatedExePath}`);
 };
 
@@ -192,7 +187,7 @@ const main = () => {
   linkWithInternalFile(compiledBitCodePath(), finalBitCodePath());
   convertBitCodeToAsm(finalBitCodePath(), asmPath());
   convertAsmToExe(asmPath(), exePath());
-  cleanTempFiles(compiledBitCodePath(), finalBitCodePath(), asmPath());
+  // cleanTempFiles(compiledBitCodePath(), finalBitCodePath(), asmPath());
 };
 
 main();
