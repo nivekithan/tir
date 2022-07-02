@@ -38,6 +38,7 @@ import {
   BoxMemberAccessExp,
   BreakStatement,
   CaretBinaryExp,
+  CharDatatype,
   ConstVariableDeclaration,
   ContinueStatement,
   DotMemberAccessExp,
@@ -66,6 +67,7 @@ import {
   ObjectLiteralExp,
   PlusBinaryExp,
   PlusUninaryExp,
+  PointerDatatype,
   ReAssignment,
   ReturnExp,
   SlashBinaryExp,
@@ -136,15 +138,14 @@ export type TirBinaryExp =
 export type TirDataType =
   | NumberDatatype
   | BooleanDataType
-  | UnknownDatatype
-  | NotCalculatedDatatype
   | IdentifierDatatype
   | StringDatatype
   | ArrayDatatype<TirDataType>
   | ObjectDatatype<TirDataType>
   | FunctionDatatype<TirDataType>
   | VoidDatatype
-  | UnknownVariable;
+  | CharDatatype
+  | PointerDatatype<TirDataType>;
 
 /**
  * Finds the datatype of Exp. It assumes the exp to be typechecked and it

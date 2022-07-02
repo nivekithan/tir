@@ -1,4 +1,5 @@
 import { Token } from "../lexer/tokens";
+import { DataType } from "./ast";
 import {
   AmpersandBinaryExp,
   ArrayDatatype,
@@ -28,6 +29,7 @@ import {
   ObjectLiteralExp,
   PlusBinaryExp,
   PlusUninaryExp,
+  PointerDatatype,
   SlashBinaryExp,
   StarBinaryExp,
   StrictEqualityBinaryExp,
@@ -86,7 +88,8 @@ export type AllDataType<DataType> =
   | ObjectDatatype<DataType>
   | FunctionDatatype<DataType>
   | VoidDatatype
-  | UnknownVariable;
+  | UnknownVariable
+  | PointerDatatype<DataType>;
 
 export const isCharLiteralExp = <ExpType, DataType>(
   exp: AllExpression<ExpType, DataType>
@@ -368,6 +371,12 @@ export const isVoidDatatype = <DataType>(
   datatype: AllDataType<DataType>
 ): datatype is VoidDatatype => {
   return datatype.type === "VoidDatatype";
+};
+
+export const isPointerDatatype = <DataType>(
+  datatype: AllDataType<DataType>
+): datatype is PointerDatatype<DataType> => {
+  return datatype.type === "PointerDataType";
 };
 
 export const isUnknownVariable = <DataType>(

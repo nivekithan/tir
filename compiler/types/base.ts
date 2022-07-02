@@ -305,3 +305,8 @@ export interface FunctionDatatype<DataType> {
   arguments: { [index: string]: DataType | undefined };
   returnType: DataType;
 }
+
+export interface PointerDatatype<Datatype> {
+  type: "PointerDataType";
+  pointsTo: Datatype;
+}
