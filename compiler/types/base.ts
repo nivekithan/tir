@@ -1,5 +1,3 @@
-import { KeywordTokens, Token } from "../lexer/tokens";
-
 export interface WhileLoopDeclaration<ExpType, BlockType> {
   type: "WhileLoopDeclaration";
   condition: ExpType;
@@ -15,7 +13,7 @@ export interface DoWhileLoopDeclaration<ExpType, BlockType> {
 export interface ImportDeclaration<DataType> {
   type: "importDeclaration";
   from: string;
-  importedIdentifires: IdentifierAst<DataType>[];
+  importedIdentifiers: IdentifierAst<DataType>[];
 }
 
 export interface IdentifierAst<DataType> {
@@ -77,11 +75,11 @@ export interface ReAssignment<ExpType, DataType> {
   type: "ReAssignment";
   path: ReAssignmentPath<ExpType, DataType>;
   assignmentOperator:
-    | Token.Assign
-    | Token.PlusAssign
-    | Token.StarAssign
-    | Token.SlashAssign
-    | Token.MinusAssign;
+    | "assign"
+    | "plusAssign"
+    | "starAssign"
+    | "slashAssign"
+    | "minusAssign";
   exp: ExpType;
 }
 
@@ -108,10 +106,10 @@ export interface BoxMemberPath<ExpType, DataType> {
 }
 
 export interface BreakStatement {
-  type: KeywordTokens.Break;
+  type: "breakStatement";
 }
 export interface ContinueStatement {
-  type: KeywordTokens.Continue;
+  type: "continueStatement";
 }
 
 export interface CharLiteralExp {
@@ -147,82 +145,82 @@ export interface ArrayLiteralExp<ExpType, DataType> {
 }
 
 export interface PlusUninaryExp<ExpType> {
-  type: Token.Plus;
+  type: "PlusUniaryExp";
   argument: ExpType;
 }
 export interface MinusUninaryExp<ExpType> {
-  type: Token.Minus;
+  type: "MinusUniaryExp";
   argument: ExpType;
 }
 export interface BangUninaryExp<ExpType> {
-  type: Token.Bang;
+  type: "BangUniaryExp";
   argument: ExpType;
 }
 
 export interface PlusBinaryExp<ExpType> {
-  type: Token.Plus;
+  type: "PlusBinaryExp";
   left: ExpType;
   right: ExpType;
 }
 
 export interface MinusBinaryExp<ExpType> {
-  type: Token.Minus;
+  type: "MinusBinaryExp";
   left: ExpType;
   right: ExpType;
 }
 export interface StarBinaryExp<ExpType> {
-  type: Token.Star;
+  type: "StarBinaryExp";
   left: ExpType;
   right: ExpType;
 }
 
 export interface SlashBinaryExp<ExpType> {
-  type: Token.Slash;
+  type: "SlashBinaryExp";
   left: ExpType;
   right: ExpType;
 }
 export interface VerticalBarBinaryExp<ExpType> {
-  type: Token.VerticalBar;
+  type: "VerticalBarBinaryExp";
   left: ExpType;
   right: ExpType;
 }
 export interface CaretBinaryExp<ExpType> {
-  type: Token.Caret;
+  type: "CaretBinaryExp";
   left: ExpType;
   right: ExpType;
 }
 export interface AmpersandBinaryExp<ExpType> {
-  type: Token.Ampersand;
+  type: "AmpersandBinaryExp";
   left: ExpType;
   right: ExpType;
 }
-export interface StrictEqualityBinaryExp<ExpType, DataType> {
-  type: Token.StrictEquality;
+export interface StrictEqualityBinaryExp<ExpType> {
+  type: "StrictEqualityBinaryExp";
   left: ExpType;
   right: ExpType;
 }
-export interface StrictNotEqualBinaryExp<ExpType, DataType> {
-  type: Token.StrictNotEqual;
+export interface StrictNotEqualBinaryExp<ExpType> {
+  type: "StrictNotEqualBinaryExp";
   left: ExpType;
   right: ExpType;
 }
 export interface LessThanBinaryExp<ExpType> {
-  type: Token.LessThan;
+  type: "LessThanBinaryExp";
   left: ExpType;
   right: ExpType;
 }
 export interface LessThanOrEqualBinaryExp<ExpType> {
-  type: Token.LessThanOrEqual;
+  type: "LessThanOrEqualBinaryExp";
   left: ExpType;
   right: ExpType;
 }
 export interface GreaterThanBinaryExp<ExpType> {
-  type: Token.GreaterThan;
+  type: "GreaterThanBinaryExp";
   left: ExpType;
   right: ExpType;
 }
 export interface GreaterThanOrEqualBinaryExp<ExpType> {
-  type: Token.GreaterThanOrEqual;
+  type: "GreaterThanOrEqualBinaryExp";
   left: ExpType;
   right: ExpType;
 }

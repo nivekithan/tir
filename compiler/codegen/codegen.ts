@@ -11,7 +11,6 @@ import llvm, {
   StructType,
   Value,
 } from "llvm-bindings";
-import { KeywordTokens, Token } from "../lexer/tokens";
 import { TLLVMFunction } from "./function";
 import {
   FunctionDeclaration,
@@ -25,15 +24,27 @@ import {
   isBangUniaryExp,
   isBooleanDatatype,
   isBooleanLiteralExp,
+  isBoxMemberAccessExp,
+  isDotMemberAccessExp,
   isFunctionCallExp,
   isFunctionDatatype,
+  isGreaterThanBinaryExp,
+  isGreaterThanOrEqualBinaryExp,
   isIdentifierLiteralExp,
+  isLessThanBinaryExp,
+  isLessThanOrEqualBinaryExp,
+  isMinusBinaryExp,
   isMinusUninaryExp,
   isNumberDatatype,
   isNumberLiteralExp,
   isObjectDatatype,
   isObjectLiteralExp,
+  isPlusBinaryExp,
   isPlusUninaryExp,
+  isSlashBinaryExp,
+  isStarBinaryExp,
+  isStrictEqualityBinaryExp,
+  isStrictNotEqualBinaryExp,
   isStringDatatype,
   isStringLiteralExp,
   isVoidDatatype,
@@ -112,7 +123,7 @@ export class CodeGen {
   }
 
   consumeImportDeclaration(curAst: ImportDeclaration<TirDataType>) {
-    const importedIdentifiers = curAst.importedIdentifires;
+    const importedIdentifiers = curAst.importedIdentifiers;
 
     for (const importedIdentifier of importedIdentifiers) {
       const importingDatatype = importedIdentifier.dataType;
@@ -156,9 +167,9 @@ export class CodeGen {
       this.consumeTypeCheckedIfBlockDeclaration(scope, curAst);
     } else if (curAst.type === "WhileLoopDeclaration") {
       this.consumeWhileLoopDeclaration(scope, curAst);
-    } else if (curAst.type === KeywordTokens.Continue) {
+    } else if (curAst.type === "continueStatement") {
       this.consumeContinueStatement(scope, curAst);
-    } else if (curAst.type === KeywordTokens.Break) {
+    } else if (curAst.type === "breakStatement") {
       this.consumeBreakStatement(scope, curAst);
     } else {
       throw Error(`It is still not supported for compiling ast ${curAst.type}`);
@@ -168,7 +179,7 @@ export class CodeGen {
    * Expected curAst to be of type KeywordTokens.Continue
    */
   consumeContinueStatement(scope: Scope, curAst: TirAst | null) {
-    if (curAst === null || curAst.type !== KeywordTokens.Continue) {
+    if (curAst === null || curAst.type !== "continueStatement") {
       throw new Error(
         `Expected curAst to be of type KeywordTokens.Continue but instead got ${curAst?.type}`
       );
@@ -185,7 +196,7 @@ export class CodeGen {
    * Expected curAst to be of type KeywordTokens.Break
    */
   consumeBreakStatement(scope: Scope, curAst: TirAst | null) {
-    if (curAst === null || curAst.type !== KeywordTokens.Break) {
+    if (curAst === null || curAst.type !== "breakStatement") {
       throw new Error(
         `Expected curAst to be of type KeywordTokens.Break but instead got ${curAst?.type}`
       );
@@ -425,30 +436,30 @@ export class CodeGen {
 
     const expValue = this.getExpValue(scope, curAst.exp);
 
-    if (curAst.assignmentOperator === Token.Assign) {
+    if (curAst.assignmentOperator === "assign") {
       this.llvmIrBuilder.CreateStore(expValue, varPointer);
-    } else if (curAst.assignmentOperator === Token.PlusAssign) {
+    } else if (curAst.assignmentOperator === "plusAssign") {
       const loadVar = this.llvmIrBuilder.CreateLoad(
         this.llvmIrBuilder.getDoubleTy(),
         varPointer
       );
       const addValue = this.llvmIrBuilder.CreateFAdd(loadVar, expValue);
       this.llvmIrBuilder.CreateStore(addValue, varPointer);
-    } else if (curAst.assignmentOperator === Token.MinusAssign) {
+    } else if (curAst.assignmentOperator === "minusAssign") {
       const loadVar = this.llvmIrBuilder.CreateLoad(
         this.llvmIrBuilder.getDoubleTy(),
         varPointer
       );
       const minusValue = this.llvmIrBuilder.CreateFSub(loadVar, expValue);
       this.llvmIrBuilder.CreateStore(minusValue, varPointer);
-    } else if (curAst.assignmentOperator === Token.StarAssign) {
+    } else if (curAst.assignmentOperator === "starAssign") {
       const loadVar = this.llvmIrBuilder.CreateLoad(
         this.llvmIrBuilder.getDoubleTy(),
         varPointer
       );
       const starValue = this.llvmIrBuilder.CreateFMul(loadVar, expValue);
       this.llvmIrBuilder.CreateStore(starValue, varPointer);
-    } else if (curAst.assignmentOperator == Token.SlashAssign) {
+    } else if (curAst.assignmentOperator == "slashAssign") {
       const loadVar = this.llvmIrBuilder.CreateLoad(
         this.llvmIrBuilder.getDoubleTy(),
         varPointer
@@ -748,36 +759,32 @@ export class CodeGen {
         argValue,
         this.llvmIrBuilder.getInt1(true)
       );
-    } else if (exp.type === Token.Plus) {
-      if (isPlusUninaryExp(exp)) {
-        return this.getExpValue(scope, exp.argument);
-      } else {
-        const leftValue = this.getExpValue(scope, exp.left);
-        const rightValue = this.getExpValue(scope, exp.right);
+    } else if (isPlusUninaryExp(exp)) {
+      return this.getExpValue(scope, exp.argument);
+    } else if (isPlusBinaryExp(exp)) {
+      const leftValue = this.getExpValue(scope, exp.left);
+      const rightValue = this.getExpValue(scope, exp.right);
 
-        return this.llvmIrBuilder.CreateFAdd(leftValue, rightValue);
-      }
-    } else if (exp.type === Token.Minus) {
-      if (isMinusUninaryExp(exp)) {
-        const argValue = this.getExpValue(scope, exp.argument);
-        return this.llvmIrBuilder.CreateFNeg(argValue);
-      } else {
-        const leftvalue = this.getExpValue(scope, exp.left);
-        const rightValue = this.getExpValue(scope, exp.right);
+      return this.llvmIrBuilder.CreateFAdd(leftValue, rightValue);
+    } else if (isMinusUninaryExp(exp)) {
+      const argValue = this.getExpValue(scope, exp.argument);
+      return this.llvmIrBuilder.CreateFNeg(argValue);
+    } else if (isMinusBinaryExp(exp)) {
+      const leftvalue = this.getExpValue(scope, exp.left);
+      const rightValue = this.getExpValue(scope, exp.right);
 
-        return this.llvmIrBuilder.CreateFSub(leftvalue, rightValue);
-      }
-    } else if (exp.type === Token.Star) {
+      return this.llvmIrBuilder.CreateFSub(leftvalue, rightValue);
+    } else if (isStarBinaryExp(exp)) {
       const leftValue = this.getExpValue(scope, exp.left);
       const rightValue = this.getExpValue(scope, exp.right);
 
       return this.llvmIrBuilder.CreateFMul(leftValue, rightValue);
-    } else if (exp.type === Token.Slash) {
+    } else if (isSlashBinaryExp(exp)) {
       const leftValue = this.getExpValue(scope, exp.left);
       const rightValue = this.getExpValue(scope, exp.right);
 
       return this.llvmIrBuilder.CreateFDiv(leftValue, rightValue);
-    } else if (exp.type === Token.StrictEquality) {
+    } else if (isStrictEqualityBinaryExp(exp)) {
       const leftValue = this.getExpValue(scope, exp.left);
       const rightValue = this.getExpValue(scope, exp.right);
 
@@ -794,7 +801,7 @@ export class CodeGen {
       } else if (isBooleanDatatype(comparingDatatype)) {
         return this.llvmIrBuilder.CreateICmpEQ(leftValue, rightValue);
       }
-    } else if (exp.type === Token.StrictNotEqual) {
+    } else if (isStrictNotEqualBinaryExp(exp)) {
       const leftValue = this.getExpValue(scope, exp.left);
       const rightValue = this.getExpValue(scope, exp.right);
 
@@ -811,27 +818,27 @@ export class CodeGen {
       } else if (isBooleanDatatype(comparingDatatype)) {
         return this.llvmIrBuilder.CreateICmpNE(leftValue, rightValue);
       }
-    } else if (exp.type === Token.GreaterThan) {
+    } else if (isGreaterThanBinaryExp(exp)) {
       const leftValue = this.getExpValue(scope, exp.left);
       const rightValue = this.getExpValue(scope, exp.right);
 
       return this.llvmIrBuilder.CreateFCmpOGT(leftValue, rightValue);
-    } else if (exp.type === Token.GreaterThanOrEqual) {
+    } else if (isGreaterThanOrEqualBinaryExp(exp)) {
       const leftValue = this.getExpValue(scope, exp.left);
       const rightValue = this.getExpValue(scope, exp.right);
 
       return this.llvmIrBuilder.CreateFCmpOGE(leftValue, rightValue);
-    } else if (exp.type === Token.LessThan) {
+    } else if (isLessThanBinaryExp(exp)) {
       const leftValue = this.getExpValue(scope, exp.left);
       const rightValue = this.getExpValue(scope, exp.right);
 
       return this.llvmIrBuilder.CreateFCmpOLT(leftValue, rightValue);
-    } else if (exp.type === Token.LessThanOrEqual) {
+    } else if (isLessThanOrEqualBinaryExp(exp)) {
       const leftValue = this.getExpValue(scope, exp.left);
       const rightValue = this.getExpValue(scope, exp.right);
 
       return this.llvmIrBuilder.CreateFCmpOLE(leftValue, rightValue);
-    } else if (exp.type === "BoxMemberAccess") {
+    } else if (isBoxMemberAccessExp(exp)) {
       const leftValue = this.getExpValue(scope, exp.left);
       const rightValue = this.getExpValue(scope, exp.right);
 
@@ -850,7 +857,7 @@ export class CodeGen {
         pointerToElement.getType().getPointerElementType(),
         pointerToElement
       );
-    } else if (exp.type === "DotMemberAccess") {
+    } else if (isDotMemberAccessExp(exp)) {
       const leftValue = this.getExpValue(scope, exp.left);
 
       const leftDatatype = getDatatypeOfTirExpression(exp.left);

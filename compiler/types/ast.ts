@@ -1,4 +1,3 @@
-import { KeywordTokens, Token } from "../lexer/tokens";
 import {
   AmpersandBinaryExp,
   ArrayDatatype,
@@ -102,8 +101,8 @@ export type BinaryExp =
   | VerticalBarBinaryExp<Expression>
   | CaretBinaryExp<Expression>
   | AmpersandBinaryExp<Expression>
-  | StrictEqualityBinaryExp<Expression, DataType>
-  | StrictNotEqualBinaryExp<Expression, DataType>
+  | StrictEqualityBinaryExp<Expression>
+  | StrictNotEqualBinaryExp<Expression>
   | LessThanBinaryExp<Expression>
   | LessThanOrEqualBinaryExp<Expression>
   | GreaterThanBinaryExp<Expression>

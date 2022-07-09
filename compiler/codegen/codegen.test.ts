@@ -1,12 +1,59 @@
-import { resolve } from "path";
-import { convertToTokens } from "../lexer/lexer";
-import { convertToAst } from "../parser/parser";
-import { DepImporter } from "../typesChecker/depImporter";
-import { typeCheckAst } from "../typesChecker/typeChecker";
 import { convertToLLVMModule } from "./codegen";
+import { test, expect } from "vitest";
+import {
+  ArrayDatatypeConst,
+  ArrayLiteralExpConst,
+  BangUninaryExpConst,
+  BooleanDataTypeConst,
+  BooleanLiteralExpConst,
+  BoxMemberAccessExpConst,
+  BoxMemberPathConst,
+  BreakStatementConst,
+  ConstVariableDeclarationConst,
+  ContinueStatementConst,
+  DotMemberAccessExpConst,
+  DotMemberPathConst,
+  ElseBlockDeclarationConst,
+  ElseIfBlockDeclarationConst,
+  FunctionCallExpConst,
+  FunctionDatatypeConst,
+  FunctionDeclarationConst,
+  GreaterThanBinaryExpConst,
+  GreaterThanOrEqualBinaryExpConst,
+  IdentifierAstConst,
+  IdentifierExpConst,
+  IdentifierPathConst,
+  IfBlockDeclarationConst,
+  ImportDeclarationConst,
+  LessThanBinaryExpConst,
+  LessThanOrEqualBinaryExpConst,
+  LetVariableDeclarationConst,
+  MinusBinaryExpConst,
+  MinusUninaryExpConst,
+  NumberDatatypeConst,
+  NumberLiteralExpConst,
+  ObjectDatatypeConst,
+  ObjectLitearlExpConst,
+  PlusBinaryExpConst,
+  PlusUninaryExpConst,
+  ReAssignmentConst,
+  ReturnExpConst,
+  SlashBinaryExpConst,
+  StarBinaryExpConst,
+  StrictEqualityBinaryExpConst,
+  StrictNotEqualBinaryExpConst,
+  StringDatatypeConst,
+  StringLiteralExpConst,
+  TirAst,
+  TypeCheckedIFBlockConst,
+  VoidDataTypeConst,
+  WhileLoopDeclarationConst,
+} from "../types/tir";
+import { isPlusBinaryExp } from "../types/all";
+import { Ast } from "../types/ast";
 
 test("Testing const variable declaration", () => {
-  const input = `
+  /*  `
   function main() {
     const a = 1;
     const b = true;
@@ -32,11 +79,251 @@ test("Testing const variable declaration", () => {
     const v = {a : 1, b : 2};
     const w = v.a;
     return;
-  } `;
+  } ` */
 
-  const output = convertToLLVMModule(
-    typeCheckAst(convertToAst(convertToTokens(input)))
-  );
+  const input = [
+    new FunctionDeclarationConst()
+      .setArguments()
+      .setExport(false)
+      .setName("main")
+      .setReturnType(new VoidDataTypeConst().toDatatype())
+      .setBlocks(
+        new ConstVariableDeclarationConst()
+          .setIdentifierName("a")
+          .setExp(new NumberLiteralExpConst().setValue(1).toExp())
+          .toAst(),
+        new ConstVariableDeclarationConst()
+          .setIdentifierName("b")
+          .setExp(new BooleanLiteralExpConst().setValue(true).toExp())
+          .toAst(),
+        new ConstVariableDeclarationConst()
+          .setIdentifierName("c")
+          .setExp(
+            new PlusUninaryExpConst()
+              .setArgument(new NumberLiteralExpConst().setValue(1).toExp())
+              .toExp()
+          )
+          .toAst(),
+        new ConstVariableDeclarationConst()
+          .setIdentifierName("d")
+          .setExp(
+            new MinusUninaryExpConst()
+              .setArgument(new NumberLiteralExpConst().setValue(1).toExp())
+              .toExp()
+          )
+          .toAst(),
+        new ConstVariableDeclarationConst()
+          .setIdentifierName("e")
+          .setExp(
+            new PlusBinaryExpConst()
+              .setLeft(new NumberLiteralExpConst().setValue(1).toExp())
+              .setRight(new NumberLiteralExpConst().setValue(1).toExp())
+              .toExp()
+          )
+          .toAst(),
+        new ConstVariableDeclarationConst()
+          .setIdentifierName("f")
+          .setExp(
+            new MinusBinaryExpConst()
+              .setLeft(new NumberLiteralExpConst().setValue(1).toExp())
+              .setRight(new NumberLiteralExpConst().setValue(2).toExp())
+              .toExp()
+          )
+          .toAst(),
+        new ConstVariableDeclarationConst()
+          .setIdentifierName("g")
+          .setExp(
+            new StarBinaryExpConst()
+              .setLeft(new NumberLiteralExpConst().setValue(1).toExp())
+              .setRight(new NumberLiteralExpConst().setValue(2).toExp())
+              .toExp()
+          )
+          .toAst(),
+        new ConstVariableDeclarationConst()
+          .setIdentifierName("h")
+          .setExp(
+            new SlashBinaryExpConst()
+              .setLeft(new NumberLiteralExpConst().setValue(2).toExp())
+              .setRight(new NumberLiteralExpConst().setValue(2).toExp())
+              .toExp()
+          )
+          .toAst(),
+        new ConstVariableDeclarationConst()
+          .setIdentifierName("i")
+          .setExp(
+            new StrictEqualityBinaryExpConst()
+              .setLeft(new NumberLiteralExpConst().setValue(1).toExp())
+              .setRight(new NumberLiteralExpConst().setValue(1).toExp())
+              .toExp()
+          )
+          .toAst(),
+        new ConstVariableDeclarationConst()
+          .setIdentifierName("j")
+          .setExp(
+            new StrictEqualityBinaryExpConst()
+              .setLeft(new BooleanLiteralExpConst().setValue(true).toExp())
+              .setRight(new BooleanLiteralExpConst().setValue(false).toExp())
+              .toExp()
+          )
+          .toAst(),
+        new ConstVariableDeclarationConst()
+          .setIdentifierName("k")
+          .setExp(
+            new StrictNotEqualBinaryExpConst()
+              .setLeft(new NumberLiteralExpConst().setValue(1).toExp())
+              .setRight(new NumberLiteralExpConst().setValue(1).toExp())
+              .toExp()
+          )
+          .toAst(),
+
+        new ConstVariableDeclarationConst()
+          .setIdentifierName("l")
+          .setExp(
+            new StrictNotEqualBinaryExpConst()
+              .setLeft(new BooleanLiteralExpConst().setValue(true).toExp())
+              .setRight(new BooleanLiteralExpConst().setValue(false).toExp())
+              .toExp()
+          )
+          .toAst(),
+        new ConstVariableDeclarationConst()
+          .setIdentifierName("m")
+          .setExp(
+            new GreaterThanBinaryExpConst()
+              .setLeft(new NumberLiteralExpConst().setValue(1).toExp())
+              .setRight(new NumberLiteralExpConst().setValue(1).toExp())
+              .toExp()
+          )
+          .toAst(),
+        new ConstVariableDeclarationConst()
+          .setIdentifierName("n")
+          .setExp(
+            new GreaterThanOrEqualBinaryExpConst()
+              .setLeft(new NumberLiteralExpConst().setValue(1).toExp())
+              .setRight(new NumberLiteralExpConst().setValue(1).toExp())
+              .toExp()
+          )
+          .toAst(),
+        new ConstVariableDeclarationConst()
+          .setIdentifierName("o")
+          .setExp(
+            new LessThanBinaryExpConst()
+              .setLeft(new NumberLiteralExpConst().setValue(1).toExp())
+              .setRight(new NumberLiteralExpConst().setValue(1).toExp())
+              .toExp()
+          )
+          .toAst(),
+        new ConstVariableDeclarationConst()
+          .setIdentifierName("p")
+          .setExp(
+            new LessThanOrEqualBinaryExpConst()
+              .setLeft(new NumberLiteralExpConst().setValue(1).toExp())
+              .setRight(new NumberLiteralExpConst().setValue(1).toExp())
+              .toExp()
+          )
+          .toAst(),
+
+        new ConstVariableDeclarationConst()
+          .setIdentifierName("q")
+          .setExp(
+            new IdentifierExpConst()
+              .setName("a")
+              .setDataType(new NumberDatatypeConst().toDatatype())
+              .toExp()
+          )
+          .toAst(),
+
+        new ConstVariableDeclarationConst()
+          .setIdentifierName("r")
+          .setExp(
+            new IdentifierExpConst()
+              .setName("b")
+              .setDataType(new BooleanDataTypeConst().toDatatype())
+              .toExp()
+          )
+          .toAst(),
+
+        new ConstVariableDeclarationConst()
+          .setIdentifierName("s")
+          .setExp(
+            new BangUninaryExpConst()
+              .setArgument(
+                new IdentifierExpConst()
+                  .setName("r")
+                  .setDataType(new BooleanDataTypeConst().toDatatype())
+                  .toExp()
+              )
+              .toExp()
+          )
+          .toAst(),
+
+        new ConstVariableDeclarationConst()
+          .setIdentifierName("t")
+          .setExp(
+            new ArrayLiteralExpConst()
+              .setExps([
+                new NumberLiteralExpConst().setValue(1).toExp(),
+                new NumberLiteralExpConst().setValue(2).toExp(),
+              ])
+              .toExp()
+          )
+          .toAst(),
+
+        new ConstVariableDeclarationConst()
+          .setIdentifierName("u")
+          .setExp(
+            new BoxMemberAccessExpConst()
+              .setLeft(
+                new IdentifierExpConst()
+                  .setName("t")
+                  .setDataType(
+                    new ArrayDatatypeConst()
+                      .setBaseType(new NumberDatatypeConst().toDatatype())
+                      .setNumberOfElements(2)
+                      .toDatatype()
+                  )
+                  .toExp()
+              )
+              .setRight(new NumberLiteralExpConst().setValue(1).toExp())
+              .toExp()
+          )
+          .toAst(),
+
+        new ConstVariableDeclarationConst()
+          .setIdentifierName("v")
+          .setExp(
+            new ObjectLitearlExpConst()
+              .addKeys("a", new NumberLiteralExpConst().setValue(1).toExp())
+              .addKeys("b", new NumberLiteralExpConst().setValue(2).toExp())
+              .toExp()
+          )
+          .toAst(),
+
+        new ConstVariableDeclarationConst()
+          .setIdentifierName("w")
+          .setExp(
+            new DotMemberAccessExpConst()
+              .setLeft(
+                new IdentifierExpConst()
+                  .setName("v")
+                  .setDataType(
+                    new ObjectDatatypeConst()
+                      .addkeys("a", new NumberDatatypeConst())
+                      .addkeys("b", new NumberDatatypeConst())
+                      .toDatatype()
+                  )
+                  .toExp()
+              )
+              .setRight("a")
+              .toExp()
+          )
+          .toAst(),
+
+        new ReturnExpConst().toAst()
+      )
+      .toAst(),
+  ];
+
+  const output = convertToLLVMModule(input);
 
   expect(output).toMatchInlineSnapshot(`
 "; ModuleID = 'main'
@@ -117,21 +404,74 @@ entry:
 });
 
 test("Testing function declaration", () => {
-  const input = `
-  function main() {
-    return;
-  }
-  function a() {
-    const b = 1;
-    const c = b;
-    const d = c + 2;
+  // `
+  //   function main() {
+  //     return;
+  //   }
+  //   function a() {
+  //     const b = 1;
+  //     const c = b;
+  //     const d = c + 2;
 
-    return d;
-  }`;
+  //     return d;
+  //   }`;
 
-  const output = convertToLLVMModule(
-    typeCheckAst(convertToAst(convertToTokens(input)))
-  );
+  const input = [
+    new FunctionDeclarationConst()
+      .setName("main")
+      .setReturnType(new VoidDataTypeConst())
+      .setArguments()
+      .setBlocks(new ReturnExpConst().toAst())
+      .toAst(),
+
+    new FunctionDeclarationConst()
+      .setName("a")
+      .setReturnType(new NumberDatatypeConst().toDatatype())
+      .setArguments()
+      .setBlocks(
+        new ConstVariableDeclarationConst()
+          .setIdentifierName("b")
+          .setExp(new NumberLiteralExpConst().setValue(1).toExp())
+          .toAst(),
+
+        new ConstVariableDeclarationConst()
+          .setIdentifierName("c")
+          .setExp(
+            new IdentifierExpConst()
+              .setName("b")
+              .setDataType(new NumberDatatypeConst().toDatatype())
+              .toExp()
+          )
+          .toAst(),
+
+        new ConstVariableDeclarationConst()
+          .setIdentifierName("d")
+          .setExp(
+            new PlusBinaryExpConst()
+              .setLeft(
+                new IdentifierExpConst()
+                  .setName("c")
+                  .setDataType(new NumberDatatypeConst().toDatatype())
+                  .toExp()
+              )
+              .setRight(new NumberLiteralExpConst().setValue(2).toExp())
+              .toExp()
+          )
+          .toAst(),
+
+        new ReturnExpConst()
+          .setExp(
+            new IdentifierExpConst()
+              .setName("d")
+              .setDataType(new NumberDatatypeConst().toDatatype())
+              .toExp()
+          )
+          .toAst()
+      )
+      .toAst(),
+  ];
+
+  const output = convertToLLVMModule(input);
 
   expect(output).toMatchInlineSnapshot(`
 "; ModuleID = 'main'
@@ -161,22 +501,57 @@ entry:
 });
 
 test("Calling a function", () => {
-  const input = `
- 
+  //   const input = `
 
-  function a() {
-    return 1;
-  }
+  //   function a() {
+  //     return 1;
+  //   }
 
-  function main() {
-    const d = a();
-    return;
-  }
-`;
+  //   function main() {
+  //     const d = a();
+  //     return;
+  //   }
+  // `;
 
-  const output = convertToLLVMModule(
-    typeCheckAst(convertToAst(convertToTokens(input)))
-  );
+  const input: TirAst[] = [
+    new FunctionDeclarationConst()
+      .setName("a")
+      .setArguments()
+      .setBlocks(
+        new ReturnExpConst()
+          .setExp(new NumberLiteralExpConst().setValue(1).toExp())
+          .toAst()
+      )
+      .setReturnType(new NumberDatatypeConst().toDatatype())
+      .toAst(),
+
+    new FunctionDeclarationConst()
+      .setName("main")
+      .setArguments()
+      .setReturnType(new VoidDataTypeConst().toDatatype())
+      .setBlocks(
+        new ConstVariableDeclarationConst()
+          .setIdentifierName("d")
+          .setExp(
+            new FunctionCallExpConst()
+              .setLeft(
+                new IdentifierExpConst()
+                  .setName("a")
+                  .setDataType(
+                    new FunctionDatatypeConst()
+                      .setReturnType(new NumberDatatypeConst().toDatatype())
+                      .toDatatype()
+                  )
+                  .toExp()
+              )
+              .toExp()
+          )
+          .toAst()
+      )
+      .toAst(),
+  ];
+
+  const output = convertToLLVMModule(input);
 
   expect(output).toMatchInlineSnapshot(`
 "; ModuleID = 'main'
@@ -199,20 +574,80 @@ entry:
 });
 
 test("Calling a function with argument", () => {
-  const input = `
-  function a(b : number, c : number) {
-    return b + c;
-  };
-  
-  function main() {
-    const d = a(1, 2);
-    return;
-  }
-  `;
+  // const input = `
+  // function a(b : number, c : number) {
+  //   return b + c;
+  // };
 
-  const output = convertToLLVMModule(
-    typeCheckAst(convertToAst(convertToTokens(input)))
-  );
+  // function main() {
+  //   const d = a(1, 2);
+  //   return;
+  // }
+  // `;
+
+  const input: TirAst[] = [
+    new FunctionDeclarationConst()
+      .setName("a")
+      .setReturnType(new NumberDatatypeConst().toDatatype())
+      .setArguments(
+        ["b", new NumberDatatypeConst().toDatatype()],
+        ["c", new NumberDatatypeConst().toDatatype()]
+      )
+      .setBlocks(
+        new ReturnExpConst()
+          .setExp(
+            new PlusBinaryExpConst()
+              .setLeft(
+                new IdentifierExpConst()
+                  .setName("b")
+                  .setDataType(new NumberDatatypeConst().toDatatype())
+                  .toExp()
+              )
+              .setRight(
+                new IdentifierExpConst()
+                  .setName("c")
+                  .setDataType(new NumberDatatypeConst().toDatatype())
+                  .toExp()
+              )
+              .toExp()
+          )
+          .toAst()
+      )
+      .toAst(),
+
+    new FunctionDeclarationConst()
+      .setName("main")
+      .setArguments()
+      .setReturnType(new VoidDataTypeConst().toDatatype())
+      .setBlocks(
+        new ConstVariableDeclarationConst()
+          .setIdentifierName("d")
+          .setExp(
+            new FunctionCallExpConst()
+              .setArguments(
+                new NumberLiteralExpConst().setValue(1).toExp(),
+                new NumberLiteralExpConst().setValue(2).toExp()
+              )
+              .setLeft(
+                new IdentifierExpConst()
+                  .setName("a")
+                  .setDataType(
+                    new FunctionDatatypeConst()
+                      .setReturnType(new NumberDatatypeConst().toDatatype())
+                      .addArgument("b", new NumberDatatypeConst().toDatatype())
+                      .addArgument("c", new NumberDatatypeConst().toDatatype())
+                      .toDatatype()
+                  )
+                  .toExp()
+              )
+              .toExp()
+          )
+          .toAst()
+      )
+      .toAst(),
+  ];
+
+  const output = convertToLLVMModule(input);
 
   expect(output).toMatchInlineSnapshot(`
 "; ModuleID = 'main'
@@ -242,15 +677,27 @@ entry:
 });
 
 test("Testing letVariable declaration", () => {
-  const input = `
-  function main() {
-    let a =1;
-    return;
-  }`;
+  // const input = `
+  // function main() {
+  //   let a =1;
+  //   return;
+  // }`;
 
-  const output = convertToLLVMModule(
-    typeCheckAst(convertToAst(convertToTokens(input)))
-  );
+  const input: TirAst[] = [
+    new FunctionDeclarationConst()
+      .setName("main")
+      .setReturnType(new VoidDataTypeConst().toDatatype())
+      .setArguments()
+      .setBlocks(
+        new LetVariableDeclarationConst()
+          .setIdentifierName("a")
+          .setExp(new NumberLiteralExpConst().setValue(1).toExp())
+          .toAst()
+      )
+      .toAst(),
+  ];
+
+  const output = convertToLLVMModule(input);
 
   expect(output).toMatchInlineSnapshot(`
 "; ModuleID = 'main'
@@ -267,33 +714,103 @@ entry:
 });
 
 test("Test identifier reassignment", () => {
-  const input = `
-  function main() {
-    let a = true;
-    a = false;
+  //   const input = `
+  //   function main() {
+  //     let a = true;
+  //     a = false;
 
-    let b = 1
-    b = 2;
-    
-    let c = 1;
-    c += 1;
-  
-    let d = 2;
-    d -= 1;
-  
-    let e = 2;
-    e *= 1;
-  
-    let f = 2;
-    f /= 1;
+  //     let b = 1
+  //     b = 2;
 
-    return;
-}
-`;
+  //     let c = 1;
+  //     c += 1;
 
-  const output = convertToLLVMModule(
-    typeCheckAst(convertToAst(convertToTokens(input)))
-  );
+  //     let d = 2;
+  //     d -= 1;
+
+  //     let e = 2;
+  //     e *= 1;
+
+  //     let f = 2;
+  //     f /= 1;
+
+  //     return;
+  // }
+  // `;
+
+  const input: TirAst[] = [
+    new FunctionDeclarationConst()
+      .setName("main")
+      .setReturnType(new VoidDataTypeConst().toDatatype())
+      .setArguments()
+      .setBlocks(
+        new LetVariableDeclarationConst()
+          .setExp(new BooleanLiteralExpConst().setValue(true).toExp())
+          .setIdentifierName("a")
+          .toAst(),
+
+        new ReAssignmentConst()
+          .setAssignmentOperator("assign")
+          .setPath(new IdentifierPathConst().setName("a").toPath())
+          .setExp(new BooleanLiteralExpConst().setValue(false).toExp())
+          .toAst(),
+
+        new LetVariableDeclarationConst()
+          .setIdentifierName("b")
+          .setExp(new NumberLiteralExpConst().setValue(1).toExp())
+          .toAst(),
+        new ReAssignmentConst()
+          .setAssignmentOperator("assign")
+          .setPath(new IdentifierPathConst().setName("b").toPath())
+          .setExp(new NumberLiteralExpConst().setValue(2).toExp())
+          .toAst(),
+
+        new LetVariableDeclarationConst()
+          .setIdentifierName("c")
+          .setExp(new NumberLiteralExpConst().setValue(1).toExp())
+          .toAst(),
+        new ReAssignmentConst()
+          .setAssignmentOperator("plusAssign")
+          .setPath(new IdentifierPathConst().setName("c").toPath())
+          .setExp(new NumberLiteralExpConst().setValue(1).toExp())
+          .toAst(),
+
+        new LetVariableDeclarationConst()
+          .setIdentifierName("d")
+          .setExp(new NumberLiteralExpConst().setValue(2).toExp())
+          .toAst(),
+        new ReAssignmentConst()
+          .setAssignmentOperator("minusAssign")
+          .setPath(new IdentifierPathConst().setName("d").toPath())
+          .setExp(new NumberLiteralExpConst().setValue(1).toExp())
+          .toAst(),
+
+        new LetVariableDeclarationConst()
+          .setIdentifierName("e")
+          .setExp(new NumberLiteralExpConst().setValue(2).toExp())
+          .toAst(),
+        new ReAssignmentConst()
+          .setAssignmentOperator("starAssign")
+          .setPath(new IdentifierPathConst().setName("e").toPath())
+          .setExp(new NumberLiteralExpConst().setValue(1).toExp())
+          .toAst(),
+
+        new LetVariableDeclarationConst()
+          .setIdentifierName("f")
+          .setExp(new NumberLiteralExpConst().setValue(2).toExp())
+          .toAst(),
+        new ReAssignmentConst()
+          .setAssignmentOperator("slashAssign")
+          .setPath(new IdentifierPathConst().setName("f").toPath())
+          .setExp(new NumberLiteralExpConst().setValue(1).toExp())
+          .toAst(),
+
+        new ReturnExpConst().toAst()
+      )
+      .toAst(),
+  ];
+
+  const output = convertToLLVMModule(input);
 
   expect(output).toMatchInlineSnapshot(`
 "; ModuleID = 'main'
@@ -334,18 +851,52 @@ entry:
 });
 
 test("Test object reassignment", () => {
-  const input = `
-  function main() {
+  // const input = `
+  // function main() {
 
-    const a = {b : 1};
-    a.b = 2;
-    return;
-  }
-  `;
+  //   const a = {b : 1};
+  //   a.b = 2;
+  //   return;
+  // }
+  // `;
 
-  const output = convertToLLVMModule(
-    typeCheckAst(convertToAst(convertToTokens(input)))
-  );
+  const input: TirAst[] = [
+    new FunctionDeclarationConst()
+      .setName("main")
+      .setArguments()
+      .setReturnType(new VoidDataTypeConst().toDatatype())
+      .setBlocks(
+        new ConstVariableDeclarationConst()
+          .setIdentifierName("a")
+          .setExp(
+            new ObjectLitearlExpConst()
+              .addKeys("b", new NumberLiteralExpConst().setValue(1).toExp())
+              .toExp()
+          )
+          .toAst(),
+
+        new ReAssignmentConst()
+          .setExp(new NumberLiteralExpConst().setValue(2).toExp())
+          .setAssignmentOperator("assign")
+          .setPath(
+            new DotMemberPathConst()
+              .setLeftDataType(
+                new ObjectDatatypeConst()
+                  .addkeys("b", new NumberDatatypeConst().toDatatype())
+                  .toDatatype()
+              )
+              .setLeftPath(new IdentifierPathConst().setName("a").toPath())
+              .setRightPath("b")
+              .toPath()
+          )
+          .toAst(),
+
+        new ReturnExpConst().toAst()
+      )
+      .toAst(),
+  ];
+
+  const output = convertToLLVMModule(input);
 
   expect(output).toMatchInlineSnapshot(`
 "; ModuleID = 'main'
@@ -368,17 +919,51 @@ entry:
 });
 
 test("Test Array Reassignment", () => {
-  const input = `
-  function main() {
+  // const input = `
+  // function main() {
 
-    const a = [1, 2];
-    a[1] = 2;
-    return;
-  }`;
+  //   const a = [1, 2];
+  //   a[1] = 2;
+  //   return;
+  // }`;
 
-  const output = convertToLLVMModule(
-    typeCheckAst(convertToAst(convertToTokens(input)))
-  );
+  const input: TirAst[] = [
+    new FunctionDeclarationConst()
+      .setName("main")
+      .setArguments()
+      .setReturnType(new VoidDataTypeConst().toDatatype())
+      .setBlocks(
+        new ConstVariableDeclarationConst()
+          .setIdentifierName("a")
+          .setExp(
+            new ArrayLiteralExpConst()
+              .setExps([
+                new NumberLiteralExpConst().setValue(1).toExp(),
+                new NumberLiteralExpConst().setValue(2).toExp(),
+              ])
+              .toExp()
+          )
+          .toAst(),
+
+        new ReAssignmentConst()
+          .setPath(
+            new BoxMemberPathConst()
+              .setLeftBaseType(new NumberDatatypeConst().toDatatype())
+              .setLeftPath(new IdentifierPathConst().setName("a").toPath())
+              .setAccessExp(new NumberLiteralExpConst().setValue(1).toExp())
+
+              .toPath()
+          )
+          .setAssignmentOperator("assign")
+          .setExp(new NumberLiteralExpConst().setValue(2).toExp())
+          .toAst(),
+
+        new ReturnExpConst().toAst()
+      )
+      .toAst(),
+  ];
+
+  const output = convertToLLVMModule(input);
 
   expect(output).toMatchInlineSnapshot(`
 "; ModuleID = 'main'
@@ -403,23 +988,65 @@ entry:
 });
 
 test("If block Declaration with only if block", () => {
-  const input = `
-  function main() {
+  // const input = `
+  // function main() {
 
-    const a = true;
-    
-    if (!a) {
-      const b = 1;
-    }
-    
-    const c = 2;
-    return;
-  }
-  `;
+  //   const a = true;
 
-  const output = convertToLLVMModule(
-    typeCheckAst(convertToAst(convertToTokens(input)))
-  );
+  //   if (!a) {
+  //     const b = 1;
+  //   }
+
+  //   const c = 2;
+  //   return;
+  // }
+  // `;
+
+  const input: TirAst[] = [
+    new FunctionDeclarationConst()
+      .setName("main")
+      .setReturnType(new VoidDataTypeConst().toDatatype())
+      .setArguments()
+      .setBlocks(
+        new ConstVariableDeclarationConst()
+          .setIdentifierName("a")
+          .setExp(new BooleanLiteralExpConst().setValue(true).toExp())
+          .toAst(),
+
+        new TypeCheckedIFBlockConst()
+          .setIfBlockDeclaration(
+            new IfBlockDeclarationConst()
+              .setCondition(
+                new BangUninaryExpConst()
+                  .setArgument(
+                    new IdentifierExpConst()
+                      .setName("a")
+                      .setDataType(new BooleanDataTypeConst().toDatatype())
+                      .toExp()
+                  )
+                  .toExp()
+              )
+              .setBlocks(
+                new ConstVariableDeclarationConst()
+                  .setIdentifierName("b")
+                  .setExp(new NumberLiteralExpConst().setValue(1).toExp())
+                  .toAst()
+              )
+              .toAst()
+          )
+          .toAst(),
+
+        new ConstVariableDeclarationConst()
+          .setIdentifierName("c")
+          .setExp(new NumberLiteralExpConst().setValue(2).toExp())
+          .toAst(),
+
+        new ReturnExpConst().toAst()
+      )
+      .toAst(),
+  ];
+
+  const output = convertToLLVMModule(input);
 
   expect(output).toMatchInlineSnapshot(`
 "; ModuleID = 'main'
@@ -448,25 +1075,77 @@ BB.1:                                             ; preds = %BB.0, %entry
 });
 
 test("If block declaration with if and else block", () => {
-  const input = `
-  function main() {
-    const a = true;
-    
-    
-    if (!a) {
-      const b = 1;
-    }  else {
-      const c = 2;
-    }
-    
-    const d = 1;
-    return;
-  }
-  `;
+  // const input = `
+  // function main() {
+  //   const a = true;
 
-  const output = convertToLLVMModule(
-    typeCheckAst(convertToAst(convertToTokens(input)))
-  );
+  //   if (!a) {
+  //     const b = 1;
+  //   }  else {
+  //     const c = 2;
+  //   }
+
+  //   const d = 1;
+  //   return;
+  // }
+  // `;
+
+  const input: TirAst[] = [
+    new FunctionDeclarationConst()
+      .setName("main")
+      .setReturnType(new VoidDataTypeConst().toDatatype())
+      .setArguments()
+      .setBlocks(
+        new ConstVariableDeclarationConst()
+          .setIdentifierName("a")
+          .setExp(new BooleanLiteralExpConst().setValue(true).toExp())
+          .toAst(),
+
+        new TypeCheckedIFBlockConst()
+          .setIfBlockDeclaration(
+            new IfBlockDeclarationConst()
+              .setCondition(
+                new BangUninaryExpConst()
+                  .setArgument(
+                    new IdentifierExpConst()
+                      .setName("a")
+                      .setDataType(new BooleanDataTypeConst().toDatatype())
+                      .toExp()
+                  )
+                  .toExp()
+              )
+              .setBlocks(
+                new ConstVariableDeclarationConst()
+                  .setIdentifierName("b")
+                  .setExp(new NumberLiteralExpConst().setValue(1).toExp())
+                  .toAst()
+              )
+              .toAst()
+          )
+          .setElseBlock(
+            new ElseBlockDeclarationConst()
+              .setBlocks(
+                new ConstVariableDeclarationConst()
+                  .setIdentifierName("c")
+                  .setExp(new NumberLiteralExpConst().setValue(2).toExp())
+                  .toAst()
+              )
+              .toAst()
+          )
+          .toAst(),
+
+        new ConstVariableDeclarationConst()
+          .setIdentifierName("d")
+          .setExp(new NumberLiteralExpConst().setValue(1).toExp())
+          .toAst(),
+
+        new ReturnExpConst().toAst()
+      )
+
+      .toAst(),
+  ];
+
+  const output = convertToLLVMModule(input);
 
   expect(output).toMatchInlineSnapshot(`
 "; ModuleID = 'main'
@@ -500,29 +1179,118 @@ BB.2:                                             ; preds = %BB.1, %BB.0
 });
 
 test("If block declaration with if, else if and else block", () => {
-  const input = `
-  function main() {
+  //   const input = `
+  //   function main() {
 
-    const a = true;
-    
-    if (!a) {
-      const b = 1;
-    } else if (2 === 1) {
-      const b = 2;
-    } else if (a === false) {
-      const c = 1;
-    } else {
-      const c = 2;
-    }
-    
-    const d = 1;
-    return;
-  }
-`;
+  //     const a = true;
 
-  const output = convertToLLVMModule(
-    typeCheckAst(convertToAst(convertToTokens(input)))
-  );
+  //     if (!a) {
+  //       const b = 1;
+  //     } else if (2 === 1) {
+  //       const b = 2;
+  //     } else if (a === false) {
+  //       const c = 1;
+  //     } else {
+  //       const c = 2;
+  //     }
+
+  //     const d = 1;
+  //     return;
+  //   }
+  // `;
+
+  const input: TirAst[] = [
+    new FunctionDeclarationConst()
+      .setName("main")
+      .setReturnType(new VoidDataTypeConst().toDatatype())
+      .setArguments()
+      .setBlocks(
+        new ConstVariableDeclarationConst()
+          .setIdentifierName("a")
+          .setExp(new BooleanLiteralExpConst().setValue(true).toExp())
+          .toAst(),
+
+        new TypeCheckedIFBlockConst()
+          .setIfBlockDeclaration(
+            new IfBlockDeclarationConst()
+              .setCondition(
+                new BangUninaryExpConst()
+                  .setArgument(
+                    new IdentifierExpConst()
+                      .setDataType(new BooleanDataTypeConst().toDatatype())
+                      .setName("a")
+                      .toExp()
+                  )
+                  .toExp()
+              )
+              .setBlocks(
+                new ConstVariableDeclarationConst()
+                  .setIdentifierName("b")
+                  .setExp(new NumberLiteralExpConst().setValue(1).toExp())
+                  .toAst()
+              )
+              .toAst()
+          )
+          .addElseIfBlock(
+            new ElseIfBlockDeclarationConst()
+              .setCondition(
+                new StrictEqualityBinaryExpConst()
+                  .setLeft(new NumberLiteralExpConst().setValue(2).toExp())
+                  .setRight(new NumberLiteralExpConst().setValue(1).toExp())
+                  .toExp()
+              )
+              .setBlocks(
+                new ConstVariableDeclarationConst()
+                  .setIdentifierName("b")
+                  .setExp(new NumberLiteralExpConst().setValue(2).toExp())
+                  .toAst()
+              )
+              .toAst()
+          )
+          .addElseIfBlock(
+            new ElseIfBlockDeclarationConst()
+              .setCondition(
+                new StrictEqualityBinaryExpConst()
+                  .setLeft(
+                    new IdentifierExpConst()
+                      .setName("a")
+                      .setDataType(new BooleanDataTypeConst().toDatatype())
+                      .toExp()
+                  )
+                  .setRight(
+                    new BooleanLiteralExpConst().setValue(false).toExp()
+                  )
+                  .toExp()
+              )
+              .setBlocks(
+                new ConstVariableDeclarationConst()
+                  .setIdentifierName("c")
+                  .setExp(new NumberLiteralExpConst().setValue(1).toExp())
+                  .toAst()
+              )
+              .toAst()
+          )
+          .setElseBlock(
+            new ElseBlockDeclarationConst()
+              .setBlocks(
+                new ConstVariableDeclarationConst()
+                  .setIdentifierName("c")
+                  .setExp(new NumberLiteralExpConst().setValue(2).toExp())
+                  .toAst()
+              )
+              .toAst()
+          )
+          .toAst(),
+
+        new ConstVariableDeclarationConst()
+          .setIdentifierName("d")
+          .setExp(new NumberLiteralExpConst().setValue(1).toExp())
+          .toAst()
+      )
+      .toAst(),
+  ];
+
+  const output = convertToLLVMModule(input);
 
   expect(output).toMatchInlineSnapshot(`
 "; ModuleID = 'main'
@@ -574,26 +1342,105 @@ BB.6:                                             ; preds = %BB.5, %BB.4, %BB.2,
 });
 
 test("If block declaration with if and else if blocks", () => {
-  const input = `
-  function main() {
+  // const input = `
+  // function main() {
 
-    const a = true;
-    
-    if (!a) {
-      const b = 1;
-    } else if (2 === 1) {
-      const b = 2;
-    } else if (a === false) {
-      const c = 1;
-    } 
-    
-    const d = 1;
-    return;
-  }`;
+  //   const a = true;
 
-  const output = convertToLLVMModule(
-    typeCheckAst(convertToAst(convertToTokens(input)))
-  );
+  //   if (!a) {
+  //     const b = 1;
+  //   } else if (2 === 1) {
+  //     const b = 2;
+  //   } else if (a === false) {
+  //     const c = 1;
+  //   }
+
+  //   const d = 1;
+  //   return;
+  // }`;
+
+  const input: TirAst[] = [
+    new FunctionDeclarationConst()
+      .setName("main")
+      .setReturnType(new VoidDataTypeConst().toDatatype())
+      .setArguments()
+      .setBlocks(
+        new ConstVariableDeclarationConst()
+          .setIdentifierName("a")
+          .setExp(new BooleanLiteralExpConst().setValue(true).toExp())
+          .toAst(),
+
+        new TypeCheckedIFBlockConst()
+          .setIfBlockDeclaration(
+            new IfBlockDeclarationConst()
+              .setCondition(
+                new BangUninaryExpConst()
+                  .setArgument(
+                    new IdentifierExpConst()
+                      .setDataType(new BooleanDataTypeConst().toDatatype())
+                      .setName("a")
+                      .toExp()
+                  )
+                  .toExp()
+              )
+              .setBlocks(
+                new ConstVariableDeclarationConst()
+                  .setIdentifierName("b")
+                  .setExp(new NumberLiteralExpConst().setValue(1).toExp())
+                  .toAst()
+              )
+              .toAst()
+          )
+          .addElseIfBlock(
+            new ElseIfBlockDeclarationConst()
+              .setCondition(
+                new StrictEqualityBinaryExpConst()
+                  .setLeft(new NumberLiteralExpConst().setValue(2).toExp())
+                  .setRight(new NumberLiteralExpConst().setValue(1).toExp())
+                  .toExp()
+              )
+              .setBlocks(
+                new ConstVariableDeclarationConst()
+                  .setIdentifierName("b")
+                  .setExp(new NumberLiteralExpConst().setValue(2).toExp())
+                  .toAst()
+              )
+              .toAst()
+          )
+          .addElseIfBlock(
+            new ElseIfBlockDeclarationConst()
+              .setCondition(
+                new StrictEqualityBinaryExpConst()
+                  .setLeft(
+                    new IdentifierExpConst()
+                      .setName("a")
+                      .setDataType(new BooleanDataTypeConst().toDatatype())
+                      .toExp()
+                  )
+                  .setRight(
+                    new BooleanLiteralExpConst().setValue(false).toExp()
+                  )
+                  .toExp()
+              )
+              .setBlocks(
+                new ConstVariableDeclarationConst()
+                  .setIdentifierName("c")
+                  .setExp(new NumberLiteralExpConst().setValue(1).toExp())
+                  .toAst()
+              )
+              .toAst()
+          )
+          .toAst(),
+
+        new ConstVariableDeclarationConst()
+          .setIdentifierName("d")
+          .setExp(new NumberLiteralExpConst().setValue(1).toExp())
+          .toAst()
+      )
+      .toAst(),
+  ];
+
+  const output = convertToLLVMModule(input);
 
   expect(output).toMatchInlineSnapshot(`
 "; ModuleID = 'main'
@@ -640,31 +1487,94 @@ BB.5:                                             ; preds = %BB.4, %BB.3, %BB.2,
 });
 
 test("While loop declaration with continue and break", () => {
-  const input = `
-  function main() {
-    
-    let a = 10;
+  // const input = `
+  // function main() {
 
-    while (true) {
-      if (a  === 5) {
-        continue;
-      }
+  //   let a = 10;
 
-      if (a === 6) {
-        break;
-      }
+  //   while (true) {
+  //     if (a  === 5) {
+  //       continue;
+  //     }
 
-      a -= 1;
-    }
+  //     if (a === 6) {
+  //       break;
+  //     }
 
-    return;
-  }
+  //     a -= 1;
+  //   }
 
-  `;
+  //   return;
+  // }
 
-  const output = convertToLLVMModule(
-    typeCheckAst(convertToAst(convertToTokens(input)))
-  );
+  // `;
+
+  const input: TirAst[] = [
+    new FunctionDeclarationConst()
+      .setName("main")
+      .setArguments()
+      .setReturnType(new VoidDataTypeConst().toDatatype())
+      .setBlocks(
+        new LetVariableDeclarationConst()
+          .setIdentifierName("a")
+          .setExp(new NumberLiteralExpConst().setValue(10).toExp())
+          .toAst(),
+
+        new WhileLoopDeclarationConst()
+          .setCondition(new BooleanLiteralExpConst().setValue(true).toExp())
+          .setBlocks(
+            new TypeCheckedIFBlockConst()
+              .setIfBlockDeclaration(
+                new IfBlockDeclarationConst()
+                  .setCondition(
+                    new StrictEqualityBinaryExpConst()
+                      .setLeft(
+                        new IdentifierExpConst()
+                          .setName("a")
+                          .setDataType(new NumberDatatypeConst().toDatatype())
+                          .toExp()
+                      )
+                      .setRight(new NumberLiteralExpConst().setValue(5).toExp())
+                      .toExp()
+                  )
+                  .setBlocks(new ContinueStatementConst().toAst())
+                  .toAst()
+              )
+              .toAst(),
+
+            new TypeCheckedIFBlockConst()
+              .setIfBlockDeclaration(
+                new IfBlockDeclarationConst()
+                  .setCondition(
+                    new StrictEqualityBinaryExpConst()
+                      .setLeft(
+                        new IdentifierExpConst()
+                          .setName("a")
+                          .setDataType(new NumberDatatypeConst().toDatatype())
+                          .toExp()
+                      )
+                      .setRight(new NumberLiteralExpConst().setValue(6).toExp())
+                      .toExp()
+                  )
+                  .setBlocks(new BreakStatementConst().toAst())
+                  .toAst()
+              )
+              .toAst(),
+
+            new ReAssignmentConst()
+              .setAssignmentOperator("minusAssign")
+              .setPath(new IdentifierPathConst().setName("a").toPath())
+              .setExp(new NumberLiteralExpConst().setValue(1).toExp())
+              .toAst()
+          )
+          .toAst(),
+
+        new ReturnExpConst().toAst()
+      )
+      .toAst(),
+  ];
+
+  const output = convertToLLVMModule(input);
 
   expect(output).toMatchInlineSnapshot(`
 "; ModuleID = 'main'
@@ -706,16 +1616,30 @@ BB.5:                                             ; preds = %BB.3
 });
 
 test("Normal String variable decalaration", () => {
-  const input = `
-  function main() {
+  // const input = `
+  // function main() {
 
-    const a = "123";
-    return;
-  }`;
+  //   const a = "123";
+  //   return;
+  // }`;
 
-  const output = convertToLLVMModule(
-    typeCheckAst(convertToAst(convertToTokens(input)))
-  );
+  const input: TirAst[] = [
+    new FunctionDeclarationConst()
+      .setArguments()
+      .setName("main")
+      .setReturnType(new VoidDataTypeConst().toDatatype())
+      .setBlocks(
+        new ConstVariableDeclarationConst()
+          .setIdentifierName("a")
+          .setExp(new StringLiteralExpConst().setValue("123").toExp())
+          .toAst(),
+
+        new ReturnExpConst().toAst()
+      )
+      .toAst(),
+  ];
+
+  const output = convertToLLVMModule(input);
 
   expect(output).toMatchInlineSnapshot(`
 "; ModuleID = 'main'
@@ -739,16 +1663,36 @@ entry:
 });
 
 test("Reassigning string variable", () => {
-  const input = `
-  function main() {
-    let a = "123";
-    a = "456";
-    return;
-  }`;
+  // const input = `
+  // function main() {
+  //   let a = "123";
+  //   a = "456";
+  //   return;
+  // }`;
 
-  const output = convertToLLVMModule(
-    typeCheckAst(convertToAst(convertToTokens(input)))
-  );
+  const input: TirAst[] = [
+    new FunctionDeclarationConst()
+      .setArguments()
+      .setReturnType(new VoidDataTypeConst().toDatatype())
+      .setName("main")
+      .setBlocks(
+        new LetVariableDeclarationConst()
+          .setIdentifierName("a")
+          .setExp(new StringLiteralExpConst().setValue("123").toExp())
+          .toAst(),
+
+        new ReAssignmentConst()
+          .setAssignmentOperator("assign")
+          .setPath(new IdentifierPathConst().setName("a").toPath())
+          .setExp(new StringLiteralExpConst().setValue("456").toExp())
+          .toAst(),
+
+        new ReturnExpConst().toAst()
+      )
+      .toAst(),
+  ];
+
+  const output = convertToLLVMModule(input);
 
   expect(output).toMatchInlineSnapshot(`
 "; ModuleID = 'main'
@@ -780,17 +1724,40 @@ entry:
 });
 
 test("Reassigning string value to another variable", () => {
-  const input = `
-  function main() {
-    const a = "123";
-    const b = a;
-    return;
-  }
-    `;
+  // const input = `
+  // function main() {
+  //   const a = "123";
+  //   const b = a;
+  //   return;
+  // }
+  //   `;
 
-  const output = convertToLLVMModule(
-    typeCheckAst(convertToAst(convertToTokens(input)))
-  );
+  const input: TirAst[] = [
+    new FunctionDeclarationConst()
+      .setName("main")
+      .setReturnType(new VoidDataTypeConst().toDatatype())
+      .setArguments()
+      .setBlocks(
+        new ConstVariableDeclarationConst()
+          .setIdentifierName("a")
+          .setExp(new StringLiteralExpConst().setValue("123").toExp())
+          .toAst(),
+
+        new ConstVariableDeclarationConst()
+          .setIdentifierName("b")
+          .setExp(
+            new IdentifierExpConst()
+              .setName("a")
+              .setDataType(new StringDatatypeConst().setLength(3).toDatatype())
+              .toExp()
+          )
+          .toAst(),
+        new ReturnExpConst().toAst()
+      )
+      .toAst(),
+  ];
+
+  const output = convertToLLVMModule(input);
 
   expect(output).toMatchInlineSnapshot(`
 "; ModuleID = 'main'
@@ -817,32 +1784,63 @@ entry:
 });
 
 test("Importing a functions from another files", () => {
-  const input = `
-  import {foo} from "./someFile";
-  
-  function main() {
+  // const input = `
+  // import {foo} from "./someFile";
 
-    const a = foo();
+  // function main() {
 
-    return; 
-  }
-  
-  `;
+  //   const a = foo();
 
-  const output = convertToLLVMModule(
-    typeCheckAst(
-      convertToAst(convertToTokens(input)),
-      new DepImporter("/curDir/s.ts", {
-        [resolve("/curDir/s.ts", "..", "./someFile.ts")]: {
-          foo: {
-            type: "FunctionDataType",
-            arguments: {},
-            returnType: { type: "BooleanDataType" },
-          },
-        },
-      })
-    )
-  );
+  //   return;
+  // }
+
+  // `;
+
+  const input: TirAst[] = [
+    new ImportDeclarationConst()
+      .setFrom("./someFile")
+      .setImportedIdentifiers(
+        new IdentifierAstConst()
+          .setName("foo")
+          .setDatatype(
+            new FunctionDatatypeConst()
+              .setReturnType(new BooleanDataTypeConst().toDatatype())
+              .toDatatype()
+          )
+          .toAst()
+      )
+      .toAst(),
+
+    new FunctionDeclarationConst()
+      .setName("main")
+      .setArguments()
+      .setReturnType(new VoidDataTypeConst().toDatatype())
+      .setBlocks(
+        new ConstVariableDeclarationConst()
+          .setIdentifierName("a")
+          .setExp(
+            new FunctionCallExpConst()
+              .setLeft(
+                new IdentifierExpConst()
+                  .setName("foo")
+                  .setDataType(
+                    new FunctionDatatypeConst()
+                      .setReturnType(new BooleanDataTypeConst().toDatatype())
+                      .toDatatype()
+                  )
+                  .toExp()
+              )
+              .setArguments()
+              .toExp()
+          )
+          .toAst(),
+
+        new ReturnExpConst().toAst()
+      )
+      .toAst(),
+  ];
+
+  const output = convertToLLVMModule(input);
 
   expect(output).toMatchInlineSnapshot(`
     "; ModuleID = 'main'
@@ -862,14 +1860,25 @@ test("Importing a functions from another files", () => {
 });
 
 test("Function which returns a number", () => {
-  const input = `
-  function main() {
-    return 1
-  }`;
+  // const input = `
+  // function main() {
+  //   return 1
+  // }`;
 
-  const output = convertToLLVMModule(
-    typeCheckAst(convertToAst(convertToTokens(input)))
-  );
+  const input: TirAst[] = [
+    new FunctionDeclarationConst()
+      .setArguments()
+      .setName("main")
+      .setReturnType(new NumberDatatypeConst().toDatatype())
+      .setBlocks(
+        new ReturnExpConst()
+          .setExp(new NumberLiteralExpConst().setValue(1).toExp())
+          .toAst()
+      )
+      .toAst(),
+  ];
+
+  const output = convertToLLVMModule(input);
 
   expect(output).toMatchInlineSnapshot(`
 "; ModuleID = 'main'
